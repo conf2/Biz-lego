@@ -67,9 +67,6 @@
         .btn { padding: 10px 16px; background: rgba(30,41,59,0.8); border: 1px solid rgba(148,163,184,0.2); color: #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; }
         .btn:hover { background: rgba(51,65,85,0.9); }
         .select { padding: 10px 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(148,163,184,0.2); color: #e2e8f0; border-radius: 8px; font-weight: 600; font-size: 12px; }
-        .controls { position: absolute; left: 300px; top: 20px; display: flex; gap: 8px; z-index: 10; }
-        .btn { padding: 10px 16px; background: rgba(30,41,59,0.8); border: 1px solid rgba(148,163,184,0.2); color: #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; }
-        .btn:hover { background: rgba(51,65,85,0.9); }
         .hint { position: absolute; left: 300px; bottom: 20px; background: rgba(11,15,25,0.8); padding: 8px 20px; border-radius: 20px; font-size: 12px; color: #64748b; pointer-events: none; z-index: 10; border: 1px solid rgba(148,163,184,0.1); }
         .stats { position: absolute; left: 300px; top: 60px; display: flex; gap: 12px; z-index: 10; }
         .stat { background: rgba(11,15,25,0.8); padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(148,163,184,0.1); }
@@ -141,8 +138,6 @@
         </div>
     </div>
     <div class="hint">🖱 ЛКМ — выбрать и перетащить (с конструкцией сверху) • 🖱 СКМ — расцепить и снять на землю • 🖱 ПКМ — вращение • 📜 — зум</div>
-    </div>
-    <div class="hint">🖱 ЛКМ — выбрать и перетащить (с конструкцией сверху) • 🖱 ПКМ — вращение • 📜 — зум</div>
     <script>
         const loadingEl = document.getElementById('loading');
         let audioCtx = null;
@@ -295,10 +290,6 @@
                     {name:'Настройка продаж', w:2, d:2, h:38.4, type:'tall'},
                     {name:'Автоответчики', w:2, d:2, h:6.4, type:'plate'},
                     {name:'Контент-план', w:1, d:4, h:19.2, type:'brick', role:'wall'},
-                    {name:'Сценарий прогревов', w:2, d:3, h:19.2, type:'brick'},
-                    {name:'Настройка продаж', w:2, d:2, h:38.4, type:'tall'},
-                    {name:'Автоответчики', w:2, d:2, h:6.4, type:'plate'},
-                    {name:'Контент-план', w:1, d:4, h:19.2, type:'brick'},
                     {name:'CRM касса', w:2, d:2, h:19.2, type:'round'},
                     {name:'Настройка воронки', w:2, d:4, h:19.2, type:'slope'},
                     {name:'Построение отдела', w:2, d:3, h:38.4, type:'tall'},
@@ -315,7 +306,6 @@
                     {name:'Модернизация отдела', w:2, d:4, h:19.2, type:'slope'},
                     {name:'Колл-центр (обзвон)', w:4, d:2, h:19.2, type:'brick', role:'sales_hall'},
                     {name:'Телепродажи B2B', w:3, d:2, h:19.2, type:'brick', role:'sales_hall'}
-                    {name:'Модернизация отдела', w:2, d:4, h:19.2, type:'slope'}
                 ]
             },
             analytics: {
@@ -374,7 +364,6 @@
         controls.maxDistance = 600;
         controls.target.set(0, 40, 0);
         controls.mouseButtons = {LEFT: null, MIDDLE: null, RIGHT: THREE.MOUSE.ROTATE};
-        controls.mouseButtons = {LEFT: null, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE};
 
         // Освещение
         scene.add(new THREE.AmbientLight(0xffffff, 0.5));
@@ -812,8 +801,6 @@
         }
 
         function snapToGrid(brick, isRoot, forceGround = false) {
-
-        function snapToGrid(brick, isRoot) {
             brick.userData.isFloating = false;
             const u = UNIT;
             const gx = Math.round(brick.position.x / u);
@@ -1183,71 +1170,6 @@
         }
         function spawnPlan(plan) {
             plan.forEach((d, idx) => {
-        window.loadDemo = function() {
-            window.clearScene();
-            const count = 8 + Math.floor(Math.random() * 8);
-            const demo = [];
-            const usedPositions = new Set();
-            const fundCount = 1 + Math.floor(Math.random() * 3);
-            for (let i = 0; i < fundCount; i++) {
-                const itemIdx = Math.floor(Math.random() * CATS.foundation.items.length);
-                let gx, gz;
-                do {
-                    gx = Math.floor((Math.random() - 0.5) * 8);
-                    gz = Math.floor((Math.random() - 0.5) * 8);
-                } while (usedPositions.has(gx + "," + gz));
-                usedPositions.add(gx + "," + gz);
-                demo.push(["foundation", itemIdx, gx, gz, 0]);
-            }
-            const markCount = 1 + Math.floor(Math.random() * 3);
-            for (let i = 0; i < markCount; i++) {
-                const itemIdx = Math.floor(Math.random() * CATS.marketing.items.length);
-                const onTop = Math.random() > 0.5 && demo.length > 0;
-                let gx, gz, gy;
-                if (onTop) {
-                    const base = demo[Math.floor(Math.random() * Math.min(3, demo.length))];
-                    gx = base[2]; gz = base[3]; gy = 1;
-                } else {
-                    do {
-                        gx = Math.floor((Math.random() - 0.5) * 8);
-                        gz = Math.floor((Math.random() - 0.5) * 8);
-                    } while (usedPositions.has(gx + "," + gz));
-                    usedPositions.add(gx + "," + gz);
-                    gy = 0;
-                }
-                demo.push(["marketing", itemIdx, gx, gz, gy]);
-            }
-            const salesCount = 1 + Math.floor(Math.random() * 3);
-            for (let i = 0; i < salesCount; i++) {
-                const itemIdx = Math.floor(Math.random() * CATS.sales.items.length);
-                const onTop = Math.random() > 0.5;
-                let gx, gz, gy;
-                if (onTop && demo.length > 0) {
-                    const base = demo[Math.floor(Math.random() * demo.length)];
-                    gx = base[2] + Math.floor(Math.random() * 3 - 1);
-                    gz = base[3] + Math.floor(Math.random() * 3 - 1);
-                    gy = 1 + Math.floor(Math.random() * 2);
-                } else {
-                    do {
-                        gx = Math.floor((Math.random() - 0.5) * 8);
-                        gz = Math.floor((Math.random() - 0.5) * 8);
-                    } while (usedPositions.has(gx + "," + gz));
-                    usedPositions.add(gx + "," + gz);
-                    gy = 0;
-                }
-                demo.push(["sales", itemIdx, gx, gz, gy]);
-            }
-            if (Math.random() > 0.3) {
-                const itemIdx = Math.floor(Math.random() * CATS.analytics.items.length);
-                let gx, gz;
-                do {
-                    gx = Math.floor((Math.random() - 0.5) * 8);
-                    gz = Math.floor((Math.random() - 0.5) * 8);
-                } while (usedPositions.has(gx + "," + gz));
-                usedPositions.add(gx + "," + gz);
-                demo.push(["analytics", itemIdx, gx, gz, 0]);
-            }
-            demo.forEach((d, idx) => {
                 setTimeout(() => {
                     const b = createBrick(d[0], d[1]);
                     b.userData.gridX = d[2];
@@ -1272,8 +1194,6 @@
             const preset = PRESETS[keys[Math.floor(Math.random() * keys.length)]];
             currentBusinessFlow = preset.flow;
             spawnPlan(createBuildingPlan(preset, true));
-                }, idx * 300);
-            });
         };
 
         // ==========================================
