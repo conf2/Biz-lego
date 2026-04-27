@@ -132,11 +132,21 @@
             showLoadError('Ошибка загрузки 3D. Проверьте подключение к интернету и обновите страницу.');
         });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        if (!window.THREE) {
+            document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"><\/script>');
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.js"></script>
     <script>
         if (!window.THREE || !THREE.OrbitControls) {
-            showLoadError('Не удалось загрузить 3D-библиотеки (THREE.js).');
+            document.write('<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>');
+        }
+    </script>
+    <script>
+        if (!window.THREE || !THREE.OrbitControls) {
+            showLoadError('Не удалось загрузить 3D-библиотеки. Проверьте доступ к CDN (cdnjs/unpkg) или откройте страницу через интернет.');
             throw new Error('THREE.js failed to load');
         }
 
