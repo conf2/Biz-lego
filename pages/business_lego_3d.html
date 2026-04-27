@@ -63,6 +63,10 @@
         .status-ok { background: rgba(34,197,94,0.2); color: #22c55e; }
         .status-warn { background: rgba(249,115,22,0.2); color: #f97316; }
         .status-err { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .controls { position: absolute; left: 300px; top: 20px; display: flex; gap: 8px; z-index: 10; flex-wrap: wrap; max-width: calc(55vw - 40px); }
+        .btn { padding: 10px 16px; background: rgba(30,41,59,0.8); border: 1px solid rgba(148,163,184,0.2); color: #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; }
+        .btn:hover { background: rgba(51,65,85,0.9); }
+        .select { padding: 10px 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(148,163,184,0.2); color: #e2e8f0; border-radius: 8px; font-weight: 600; font-size: 12px; }
         .controls { position: absolute; left: 300px; top: 20px; display: flex; gap: 8px; z-index: 10; }
         .btn { padding: 10px 16px; background: rgba(30,41,59,0.8); border: 1px solid rgba(148,163,184,0.2); color: #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; }
         .btn:hover { background: rgba(51,65,85,0.9); }
@@ -72,6 +76,11 @@
         .stat-v { font-size: 20px; font-weight: 800; background: linear-gradient(135deg,#667eea,#764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .stat-l { font-size: 10px; color: #64748b; text-transform: uppercase; }
         .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 24px; font-weight: 800; color: #667eea; z-index: 100; pointer-events: none; transition: opacity 0.5s; }
+        .ops-flow { display:grid; gap:8px; }
+        .ops-step { background:rgba(30,41,59,0.45); border:1px solid rgba(148,163,184,0.15); border-radius:10px; padding:8px; }
+        .ops-step-head { display:flex; justify-content:space-between; font-size:11px; color:#cbd5e1; margin-bottom:6px; }
+        .ops-bar { height:6px; background:rgba(51,65,85,0.5); border-radius:8px; overflow:hidden; }
+        .ops-fill { height:100%; border-radius:8px; transition:width .4s ease; }
     </style>
 </head>
 <body>
@@ -84,6 +93,14 @@
     <div class="controls">
         <button class="btn" onclick="clearScene()">Очистить</button>
         <button class="btn" onclick="loadDemo()">🎲 Случайная демо</button>
+        <select class="select" id="preset-select">
+            <option value="content_plant">Набор: Контент-завод</option>
+            <option value="plant">Набор: Завод</option>
+            <option value="agency">Набор: Агентство</option>
+            <option value="store">Набор: Магазины</option>
+            <option value="kids">Набор: Детский центр</option>
+        </select>
+        <button class="btn" onclick="loadPreset()">🏗 Собрать набор</button>
         <button class="btn" id="sound-toggle" onclick="toggleSound()">🔊 Звук: Вкл</button>
     </div>
     <div class="stats">
@@ -118,6 +135,12 @@
             <h4>⚡ Статус системы</h4>
             <div id="status-content"><div class="status-badge status-err">Нет элементов</div></div>
         </div>
+        <div class="viz-card" id="viz-ops">
+            <h4>🏭 Виртуальный офис / производство</h4>
+            <div id="ops-content"></div>
+        </div>
+    </div>
+    <div class="hint">🖱 ЛКМ — выбрать и перетащить (с конструкцией сверху) • 🖱 СКМ — расцепить и снять на землю • 🖱 ПКМ — вращение • 📜 — зум</div>
     </div>
     <div class="hint">🖱 ЛКМ — выбрать и перетащить (с конструкцией сверху) • 🖱 ПКМ — вращение • 📜 — зум</div>
     <script>
@@ -268,6 +291,10 @@
             sales: {
                 name: 'Продажи и контент', color: 0xef4444,
                 items: [
+                    {name:'Сценарий прогревов', w:2, d:3, h:19.2, type:'brick', role:'wall'},
+                    {name:'Настройка продаж', w:2, d:2, h:38.4, type:'tall'},
+                    {name:'Автоответчики', w:2, d:2, h:6.4, type:'plate'},
+                    {name:'Контент-план', w:1, d:4, h:19.2, type:'brick', role:'wall'},
                     {name:'Сценарий прогревов', w:2, d:3, h:19.2, type:'brick'},
                     {name:'Настройка продаж', w:2, d:2, h:38.4, type:'tall'},
                     {name:'Автоответчики', w:2, d:2, h:6.4, type:'plate'},
@@ -285,6 +312,9 @@
                     {name:'Делегирование рутины', w:2, d:4, h:6.4, type:'tile'},
                     {name:'Система мотивации', w:2, d:3, h:19.2, type:'brick'},
                     {name:'Карта взаимодействия', w:3, d:3, h:6.4, type:'plate'},
+                    {name:'Модернизация отдела', w:2, d:4, h:19.2, type:'slope'},
+                    {name:'Колл-центр (обзвон)', w:4, d:2, h:19.2, type:'brick', role:'sales_hall'},
+                    {name:'Телепродажи B2B', w:3, d:2, h:19.2, type:'brick', role:'sales_hall'}
                     {name:'Модернизация отдела', w:2, d:4, h:19.2, type:'slope'}
                 ]
             },
@@ -308,6 +338,14 @@
                     {name:'Базы данных', w:2, d:4, h:6.4, type:'tile'}
                 ]
             }
+        };
+
+        const PRESETS = {
+            content_plant: { label: 'Контент-завод', flow: 'content', footprint:[7,5], floors: 2, wallCat:'marketing', roofCat:'analytics', accentCat:'sales' },
+            plant: { label: 'Завод', flow: 'factory', footprint:[8,6], floors: 2, wallCat:'foundation', roofCat:'analytics', accentCat:'sales' },
+            agency: { label: 'Агентство', flow: 'office', footprint:[6,4], floors: 3, wallCat:'marketing', roofCat:'foundation', accentCat:'sales' },
+            store: { label: 'Магазины', flow: 'retail', footprint:[7,4], floors: 2, wallCat:'sales', roofCat:'marketing', accentCat:'analytics' },
+            kids: { label: 'Детский центр', flow: 'education', footprint:[6,5], floors: 2, wallCat:'foundation', roofCat:'marketing', accentCat:'sales' }
         };
 
         // ==========================================
@@ -335,6 +373,7 @@
         controls.minDistance = 60;
         controls.maxDistance = 600;
         controls.target.set(0, 40, 0);
+        controls.mouseButtons = {LEFT: null, MIDDLE: null, RIGHT: THREE.MOUSE.ROTATE};
         controls.mouseButtons = {LEFT: null, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE};
 
         // Освещение
@@ -376,6 +415,8 @@
         const mouse = new THREE.Vector2();
         const raycaster = new THREE.Raycaster();
         const canvas = renderer.domElement;
+        let currentBusinessFlow = 'office';
+        let opsTick = 0;
 
         canvas.addEventListener('contextmenu', e => e.preventDefault());
 
@@ -433,6 +474,14 @@
             mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
             const hits = raycaster.intersectObjects(bricks, true);
+            if (e.button === 1 && hits.length > 0) {
+                let obj = hits[0].object;
+                while (obj.parent && !obj.userData.isBrick) obj = obj.parent;
+                if (obj.userData.isBrick) {
+                    detachToGround(obj);
+                }
+                return;
+            }
             if (hits.length > 0) {
                 let obj = hits[0].object;
                 while (obj.parent && !obj.userData.isBrick) obj = obj.parent;
@@ -551,6 +600,69 @@
             tex.needsUpdate = true; tex.anisotropy = 16;
             return tex;
         }
+        function detectRole(item) {
+            if (item.role) return item.role;
+            if (item.type === "slope") return "roof";
+            if (item.type === "base" || item.type === "plate") return "floor";
+            if (item.type === "brick") return "wall";
+            if (item.type === "tall") return "tower";
+            return "functional";
+        }
+        function addDecor(group, item, catColor, w, h, d) {
+            const role = detectRole(item);
+            const edge = new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.BoxGeometry(w - 1.2, h + 0.1, d - 1.2)),
+                new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.18 })
+            );
+            group.add(edge);
+            if (role === "wall" || role === "tower") {
+                for (let x = -item.w/2 + 0.5; x <= item.w/2 - 0.5; x++) {
+                    const pane = new THREE.Mesh(
+                        new THREE.PlaneGeometry(UNIT * 0.55, Math.min(h * 0.45, 22)),
+                        new THREE.MeshPhysicalMaterial({ color: 0x9dd6ff, transparent: true, opacity: 0.45, roughness: 0.05, metalness: 0.2 })
+                    );
+                    pane.position.set(x * UNIT, 0, d/2 + 1.2);
+                    group.add(pane);
+                }
+            } else if (role === "roof") {
+                const roofLight = new THREE.Mesh(
+                    new THREE.BoxGeometry(w * 0.5, 1.6, d * 0.14),
+                    new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0x8a6f00, emissiveIntensity: 0.6 })
+                );
+                roofLight.position.set(0, h/2 + 1.5, 0);
+                group.add(roofLight);
+            } else if (role === "floor") {
+                const path = new THREE.Mesh(
+                    new THREE.PlaneGeometry(w * 0.85, d * 0.25),
+                    new THREE.MeshBasicMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.22, side: THREE.DoubleSide })
+                );
+                path.rotation.x = -Math.PI / 2;
+                path.position.y = h/2 + 0.3;
+                group.add(path);
+            }
+            if (detectRole(item) === "sales_hall" || item.name.toLowerCase().includes("обзвон") || item.name.toLowerCase().includes("тел")) {
+                const glass = new THREE.Mesh(
+                    new THREE.BoxGeometry(w * 0.9, h * 0.7, 2),
+                    new THREE.MeshPhysicalMaterial({ color: 0xbfe9ff, transparent: true, opacity: 0.35, roughness: 0.02, metalness: 0.15, clearcoat: 1 })
+                );
+                glass.position.set(0, 0, d/2 + 2);
+                group.add(glass);
+                for (let i = 0; i < Math.max(2, Math.floor(item.w)); i++) {
+                    const person = new THREE.Mesh(
+                        new THREE.CapsuleGeometry(2.2, 5, 4, 8),
+                        new THREE.MeshStandardMaterial({ color: 0xf8fafc })
+                    );
+                    person.position.set((i - (item.w - 1)/2) * UNIT * 0.85, -h*0.12, d*0.05);
+                    group.add(person);
+                }
+            }
+            const decorDot = new THREE.Mesh(
+                new THREE.SphereGeometry(1.8, 10, 10),
+                new THREE.MeshStandardMaterial({ color: catColor, emissive: catColor, emissiveIntensity: 0.45 })
+            );
+            decorDot.position.set(-w/2 + 4, h/2 + 2, -d/2 + 4);
+            group.add(decorDot);
+        }
         function createBrick(catKey, itemIdx, pos) {
             const cat = CATS[catKey];
             const item = cat.items[itemIdx];
@@ -621,11 +733,13 @@
                 labelR.position.set(w/2 + 0.8, 0, 0);
                 group.add(labelR);
             }
+            addDecor(group, item, cat.color, w, h, d);
             group.userData = {
                 catKey: catKey, itemIdx: itemIdx,
                 gridW: item.w, gridD: item.d, h: h,
                 color: cat.color, name: item.name,
                 catName: cat.name, type: item.type,
+                role: detectRole(item),
                 isBrick: true,
                 id: Math.random().toString(36).substr(2,9),
                 gridX: 0, gridZ: 0, gridY: 0,
@@ -681,6 +795,23 @@
             }
             return true;
         }
+        function detachToGround(brick) {
+            const tower = [brick, ...getBricksOnTop(brick)];
+            tower.forEach((b, idx) => {
+                b.userData.isFloating = true;
+                b.position.y += 40 + idx * 14;
+            });
+            snapToGrid(brick, true, true);
+            function placeTop(i) {
+                if (i >= tower.length) { updateViz(); return; }
+                const b = tower[i];
+                snapToGrid(b, false, true);
+                setTimeout(() => placeTop(i + 1), 120);
+            }
+            setTimeout(() => placeTop(1), 180);
+        }
+
+        function snapToGrid(brick, isRoot, forceGround = false) {
 
         function snapToGrid(brick, isRoot) {
             brick.userData.isFloating = false;
@@ -692,6 +823,7 @@
             let bestDist = Infinity;
             for (const other of bricks) {
                 if (other === brick || other.userData.isFloating) continue;
+                if (forceGround) continue;
                 const otherTop = other.position.y + other.userData.h/2;
                 const oLeft = other.userData.gridX - other.userData.gridW/2;
                 const oRight = other.userData.gridX + other.userData.gridW/2;
@@ -826,6 +958,7 @@
             const analyticsEl = document.getElementById("analytics-content");
             const timeEl = document.getElementById("time-content");
             const statusEl = document.getElementById("status-content");
+            const opsEl = document.getElementById("ops-content");
             if (bricks.length === 0) {
                 websitesEl.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:12px;">Добавьте элементы</div>';
                 funnelsEl.innerHTML = '';
@@ -833,6 +966,7 @@
                 analyticsEl.innerHTML = '';
                 timeEl.innerHTML = '';
                 statusEl.innerHTML = '<div class="status-badge status-err">Нет элементов</div>';
+                opsEl.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:12px;">Соберите набор, чтобы увидеть поток операций</div>';
                 return;
             }
             const byCat = {};
@@ -939,6 +1073,34 @@
             if (analytics < 1) statusHtml += "• Добавьте аналитику (KPI, аудит)";
             statusHtml += "</div>";
             statusEl.innerHTML = statusHtml;
+
+            const flowTitles = {
+                content: ["Брифы", "Продакшн контента", "Публикация и лиды"],
+                factory: ["Производство", "Склад", "Отдел продаж"],
+                office: ["Лиды", "Аккаунт-менеджеры", "Сделки"],
+                retail: ["Поставка", "Торговый зал", "Касса/доставка"],
+                education: ["Запись", "Занятия", "Продление абонемента"]
+            };
+            const currentFlow = flowTitles[currentBusinessFlow] || flowTitles.office;
+            const stageBase = [28, 56, 42];
+            const salesBoost = (byCat.sales?.length || 0) * 2;
+            const prodBoost = (byCat.foundation?.length || 0) * 2;
+            const analyticsBoost = (byCat.analytics?.length || 0) * 2;
+            const vals = [
+                Math.min(98, stageBase[0] + prodBoost + (opsTick % 8)),
+                Math.min(98, stageBase[1] + analyticsBoost + ((opsTick + 2) % 10)),
+                Math.min(98, stageBase[2] + salesBoost + ((opsTick + 4) % 12))
+            ];
+            opsEl.innerHTML =
+                '<div style="font-size:11px;color:#94a3b8;line-height:1.5;margin-bottom:8px;">' +
+                'Прагматичный режим: считаем пропускную способность в реальном времени и показываем узкие места виртуального офиса.</div>' +
+                '<div class="ops-flow">' +
+                vals.map((v, idx) => (
+                    '<div class="ops-step"><div class="ops-step-head"><span>' + currentFlow[idx] + '</span><strong>' + v + '%</strong></div>' +
+                    '<div class="ops-bar"><div class="ops-fill" style="width:' + v + '%;background:' + (idx === 0 ? '#3b82f6' : idx === 1 ? '#f97316' : '#22c55e') + ';"></div></div></div>'
+                )).join('') +
+                '</div><div style="margin-top:10px;font-size:11px;color:#cbd5e1;background:rgba(15,23,42,0.6);border:1px solid rgba(148,163,184,0.14);border-radius:8px;padding:8px;">' +
+                'Поток: производство → склад → продажи. При росте блока "Аналитика" автоматически уменьшается простой склада.</div>';
         }
         function updateStats() {
             document.getElementById("s-count").textContent = bricks.length;
@@ -978,6 +1140,49 @@
             updateViz();
         };
 
+        function getItemByRole(catKey, role) {
+            const items = CATS[catKey].items;
+            let idx = items.findIndex(it => detectRole(it) === role);
+            if (idx < 0) idx = Math.floor(Math.random() * items.length);
+            return idx;
+        }
+        function queueBrick(queue, cat, itemIdx, gx, gz, level = 0) {
+            queue.push([cat, itemIdx, gx, gz, level]);
+        }
+        function createBuildingPlan(preset, randomize = false) {
+            const plan = [];
+            const width = preset.footprint[0] + (randomize ? Math.floor(Math.random() * 2) : 0);
+            const depth = preset.footprint[1] + (randomize ? Math.floor(Math.random() * 2) : 0);
+            const x0 = -Math.floor(width / 2);
+            const z0 = -Math.floor(depth / 2);
+            const floors = preset.floors + (randomize ? Math.floor(Math.random() * 2) : 0);
+            for (let x = x0; x < x0 + width; x += 2) {
+                for (let z = z0; z < z0 + depth; z += 2) {
+                    queueBrick(plan, 'foundation', getItemByRole('foundation', 'floor'), x, z, 0);
+                }
+            }
+            for (let floor = 1; floor <= floors; floor++) {
+                for (let x = x0; x < x0 + width; x += 2) {
+                    queueBrick(plan, preset.wallCat, getItemByRole(preset.wallCat, 'wall'), x, z0, floor);
+                    queueBrick(plan, preset.wallCat, getItemByRole(preset.wallCat, 'wall'), x, z0 + depth - 2, floor);
+                }
+                for (let z = z0 + 2; z < z0 + depth - 2; z += 2) {
+                    queueBrick(plan, preset.wallCat, getItemByRole(preset.wallCat, 'wall'), x0, z, floor);
+                    queueBrick(plan, preset.wallCat, getItemByRole(preset.wallCat, 'wall'), x0 + width - 2, z, floor);
+                }
+                queueBrick(plan, preset.accentCat, Math.floor(Math.random() * CATS[preset.accentCat].items.length), x0 + 2, z0 + 2, floor);
+            }
+            for (let x = x0; x < x0 + width; x += 2) {
+                for (let z = z0; z < z0 + depth; z += 2) {
+                    queueBrick(plan, preset.roofCat, getItemByRole(preset.roofCat, 'roof'), x, z, floors + 1);
+                }
+            }
+            const salesHallIdx = CATS.sales.items.findIndex(i => detectRole(i) === 'sales_hall');
+            if (salesHallIdx >= 0) queueBrick(plan, 'sales', salesHallIdx, x0 + Math.floor(width/2) - 1, z0 + depth, 1);
+            return plan;
+        }
+        function spawnPlan(plan) {
+            plan.forEach((d, idx) => {
         window.loadDemo = function() {
             window.clearScene();
             const count = 8 + Math.floor(Math.random() * 8);
@@ -1049,6 +1254,24 @@
                     b.userData.gridZ = d[3];
                     b.position.x = d[2] * UNIT;
                     b.position.z = d[3] * UNIT;
+                    b.position.y += d[4] * 24;
+                    if (d[4] > 0) snapToGrid(b, false);
+                }, idx * 120);
+            });
+        }
+        window.loadPreset = function() {
+            const key = document.getElementById('preset-select').value;
+            const preset = PRESETS[key] || PRESETS.content_plant;
+            currentBusinessFlow = preset.flow;
+            window.clearScene();
+            spawnPlan(createBuildingPlan(preset, false));
+        };
+        window.loadDemo = function() {
+            window.clearScene();
+            const keys = Object.keys(PRESETS);
+            const preset = PRESETS[keys[Math.floor(Math.random() * keys.length)]];
+            currentBusinessFlow = preset.flow;
+            spawnPlan(createBuildingPlan(preset, true));
                 }, idx * 300);
             });
         };
@@ -1111,6 +1334,11 @@
                 window.loadDemo();
             }
         }, 1200);
+
+        setInterval(() => {
+            opsTick = (opsTick + 1) % 1000;
+            if (bricks.length > 0) updateViz();
+        }, 900);
 
     </script>
 </body>
