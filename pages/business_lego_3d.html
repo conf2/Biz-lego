@@ -84,6 +84,7 @@
     <div class="controls">
         <button class="btn" onclick="clearScene()">Очистить</button>
         <button class="btn" onclick="loadDemo()">🎲 Случайная демо</button>
+        <button class="btn" id="sound-toggle" onclick="toggleSound()">🔊 Звук: Вкл</button>
     </div>
     <div class="stats">
         <div class="stat"><div class="stat-v" id="s-count">0</div><div class="stat-l">Деталей</div></div>
@@ -121,6 +122,63 @@
     <div class="hint">🖱 ЛКМ — выбрать и перетащить (с конструкцией сверху) • 🖱 ПКМ — вращение • 📜 — зум</div>
     <script>
         const loadingEl = document.getElementById('loading');
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function ensureAudio() {
+            if (!soundEnabled) return null;
+            if (!audioCtx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return null;
+                audioCtx = new AudioCtx();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+            return audioCtx;
+        }
+
+        function playTone(type, freq, duration, volume, glideTo) {
+            const ctx = ensureAudio();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            if (glideTo) {
+                osc.frequency.exponentialRampToValueAtTime(glideTo, ctx.currentTime + duration);
+            }
+            gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(volume, ctx.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + duration + 0.03);
+        }
+
+        function playPlaceSound() {
+            playTone('triangle', 420, 0.09, 0.05, 680);
+        }
+
+        function playConnectSound() {
+            playTone('square', 760, 0.07, 0.03, 940);
+        }
+
+        function playClearSound() {
+            playTone('sine', 520, 0.08, 0.04, 300);
+        }
+
+        window.toggleSound = function() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('sound-toggle');
+            if (btn) {
+                btn.textContent = soundEnabled ? '🔊 Звук: Вкл' : '🔈 Звук: Выкл';
+            }
+            if (soundEnabled) {
+                playTone('sine', 600, 0.06, 0.03, 700);
+            }
+        };
 
         function showLoadError(message) {
             if (!loadingEl) return;
@@ -440,6 +498,7 @@
             }
         }
 
+        canvas.addEventListener('pointerdown', () => { ensureAudio(); }, { once: true });
         canvas.addEventListener('pointerdown', onPointerDown);
         canvas.addEventListener('pointermove', onPointerMove);
         canvas.addEventListener('pointerup', onPointerUp);
@@ -602,6 +661,7 @@
                 else snapToGrid(group, false);
             }
             requestAnimationFrame(anim);
+            playPlaceSound();
             return group;
         }
         function isGridFree(gx, gz, w, d, gy) {
@@ -704,6 +764,7 @@
         }
 
         function createConnectEffect(x, y, z) {
+            playConnectSound();
             const flash = new THREE.PointLight(0xffd700, 6, 80);
             flash.position.set(x, y + 15, z);
             scene.add(flash);
@@ -909,6 +970,7 @@
         // UI ФУНКЦИИ
         // ==========================================
         window.clearScene = function() {
+            playClearSound();
             bricks.forEach(b => scene.remove(b));
             bricks = [];
             selectedBrick = null;

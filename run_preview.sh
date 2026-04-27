@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PORT="${1:-8000}"
-URL="http://localhost:${PORT}/pages/"
+URL="http://localhost:${PORT}/pages/business_lego_3d.html"
 
 open_browser() {
   if command -v xdg-open >/dev/null 2>&1; then
