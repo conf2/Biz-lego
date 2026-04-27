@@ -3,10 +3,12 @@ import {
   applyRandomDemo,
   canGoNext,
   createInitialState,
+  evaluateResult,
   hydrateState,
   nextStep,
   resetState,
   serializeState,
+  STEPS,
   toggleBlock
 } from "./state.js";
 import { renderContent, renderTop } from "./ui.js";
@@ -33,6 +35,12 @@ const els = {
 
 let audioCtx = null;
 let timerId = null;
+
+function syncResultIfNeeded() {
+  if (!state.finished && state.step === STEPS.RESULT) {
+    evaluateResult(state);
+  }
+}
 
 function initScene() {
   const colors = ["#38bdf8", "#22c55e", "#f59e0b", "#e879f9", "#60a5fa"];
@@ -93,6 +101,8 @@ function persist() {
 }
 
 function rerender() {
+  syncResultIfNeeded();
+
   if (state.started) {
     els.startOverlay.classList.add("hidden");
   }
@@ -107,6 +117,7 @@ function rerender() {
     },
     onBlockToggle: (block) => {
       toggleBlock(state, block);
+      syncResultIfNeeded();
       playClick();
       persist();
       rerender();
@@ -138,6 +149,7 @@ function registerHotkeys() {
 
     if (key === "d") {
       applyRandomDemo(state);
+      syncResultIfNeeded();
       persist();
       rerender();
     }
@@ -181,6 +193,7 @@ els.nextBtn.addEventListener("click", () => {
 els.demoBtn.addEventListener("click", () => {
   if (!state.started || state.finished) return;
   applyRandomDemo(state);
+  syncResultIfNeeded();
   playClick();
   persist();
   rerender();
