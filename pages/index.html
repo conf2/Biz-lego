@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biz Lego — Старт</title>
+  <style>
+    body { margin:0; font-family:Segoe UI,system-ui,sans-serif; background:#0b0f19; color:#e2e8f0; }
+    .wrap { max-width:960px; margin:0 auto; padding:32px 20px 48px; }
+    h1 { margin:0 0 8px; font-size:36px; }
+    .sub { color:#94a3b8; margin-bottom:24px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+    .card { display:block; text-decoration:none; color:inherit; background:#111827; border:1px solid #1f2937; border-radius:14px; padding:16px; }
+    .card:hover { border-color:#667eea; transform:translateY(-2px); transition:.2s; }
+    .tag { font-size:12px; color:#a5b4fc; text-transform:uppercase; letter-spacing:.04em; }
+    .title { margin-top:8px; font-size:18px; font-weight:700; }
+    .desc { margin-top:8px; color:#94a3b8; font-size:14px; }
+    .tip { margin-top:20px; padding:12px 14px; background:#1e293b; border-radius:10px; color:#cbd5e1; font-size:14px; }
+    code { background:#020617; padding:2px 6px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Biz Lego</h1>
+    <div class="sub">Точка входа для превью и навигации по материалам проекта.</div>
+
+    <div class="grid">
+      <a class="card" href="./business_lego_3d.html">
+        <div class="tag">Главное</div>
+        <div class="title">3D-конструктор</div>
+        <div class="desc">Интерактивный конструктор с физикой, категориями и демо-сборкой.</div>
+      </a>
+
+      <a class="card" href="./parts/business_lego_part1.html"><div class="tag">Часть</div><div class="title">Part 1</div><div class="desc">Страница 1 из набора.</div></a>
+      <a class="card" href="./parts/business_lego_part2.html"><div class="tag">Часть</div><div class="title">Part 2</div><div class="desc">Страница 2 из набора.</div></a>
+      <a class="card" href="./parts/business_lego_part3.html"><div class="tag">Часть</div><div class="title">Part 3</div><div class="desc">Страница 3 из набора.</div></a>
+      <a class="card" href="./parts/business_lego_part4.html"><div class="tag">Часть</div><div class="title">Part 4</div><div class="desc">Страница 4 из набора.</div></a>
+      <a class="card" href="./parts/business_lego_part5.html"><div class="tag">Часть</div><div class="title">Part 5</div><div class="desc">Страница 5 из набора.</div></a>
+    </div>
+
+    <div class="tip">Если в стороннем превью 3D не запускается, открой через GitHub Pages или локально: <code>python3 -m http.server 8000</code> и затем <code>/pages/</code>.</div>
+  </div>
+</body>
+</html>

@@ -119,18 +119,25 @@
         </div>
     </div>
     <div class="hint">🖱 ЛКМ — выбрать и перетащить (с конструкцией сверху) • 🖱 ПКМ — вращение • 📜 — зум</div>
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    <script nomodule>
+        const l = document.getElementById('loading');
+        if (l) {
+            l.textContent = 'Нужен современный браузер (Chrome/Edge/Firefox/Safari) для 3D-модуля';
+            l.style.color = '#f97316';
         }
-    }
     </script>
 
     <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
+        const loadingEl = document.getElementById('loading');
+        window.addEventListener('error', () => {
+            if (loadingEl) {
+                loadingEl.textContent = 'Ошибка загрузки 3D. Откройте через GitHub Pages или локальный сервер.';
+                loadingEl.style.color = '#ef4444';
+            }
+        });
 
         // ==========================================
         // КОНФИГУРАЦИЯ LEGO
@@ -1024,6 +1031,13 @@
                 document.getElementById("loading").style.display = "none";
             }, 500);
         }, 1000);
+
+        // Автодемо для первого запуска в превью-сервисах
+        setTimeout(() => {
+            if (bricks.length === 0) {
+                window.loadDemo();
+            }
+        }, 1200);
 
     </script>
 </body>
