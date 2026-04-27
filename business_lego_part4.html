@@ -1,0 +1,312 @@
+
+        // ==========================================
+        // КАЧЕСТВЕННЫЕ НАКЛЕЙКИ НА ВСЮ ДЕТАЛЬ
+        // ==========================================
+        function createLabelTexture(text, color) {
+            const c = document.createElement("canvas");
+            c.width = 2048; c.height = 1024;
+            const ctx = c.getContext("2d");
+            ctx.fillStyle = "#" + color.toString(16).padStart(6,"0");
+            ctx.fillRect(0,0,2048,1024);
+            const g = ctx.createLinearGradient(0,0,0,1024);
+            g.addColorStop(0,"rgba(255,255,255,0.4)");
+            g.addColorStop(0.5,"rgba(255,255,255,0.1)");
+            g.addColorStop(1,"rgba(0,0,0,0.3)");
+            ctx.fillStyle = g; ctx.fillRect(0,0,2048,1024);
+            ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 20;
+            ctx.strokeRect(40,40,1968,944);
+            ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.lineWidth = 8;
+            ctx.strokeRect(80,80,1888,864);
+            ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            let fontSize = 140;
+            ctx.font = `bold ${fontSize}px "Segoe UI", Arial, sans-serif`;
+            const metrics = ctx.measureText(text);
+            if (metrics.width > 1800) {
+                fontSize = Math.floor(140 * 1800 / metrics.width);
+                ctx.font = `bold ${fontSize}px "Segoe UI", Arial, sans-serif`;
+            }
+            const words = text.split(" "); const lines = []; let cur = "";
+            for (const w of words) {
+                const t = cur + w + " ";
+                if (ctx.measureText(t).width > 1800 && cur) {
+                    lines.push(cur.trim()); cur = w + " ";
+                } else { cur = t; }
+            }
+            lines.push(cur.trim());
+            if (lines.length > 2) {
+                fontSize = Math.floor(fontSize * 2 / lines.length);
+                ctx.font = `bold ${fontSize}px "Segoe UI", Arial, sans-serif`;
+            }
+            const lh = fontSize * 1.3;
+            const sy = 512 - (lines.length - 1) * lh / 2;
+            lines.forEach((l, i) => ctx.fillText(l, 1024, sy + i * lh));
+            ctx.fillStyle = "rgba(255,255,255,0.8)";
+            ctx.font = 'bold 60px "Segoe UI", Arial, sans-serif';
+            ctx.textAlign = "left"; ctx.fillText("R", 80, 120);
+            const tex = new THREE.CanvasTexture(c);
+            tex.needsUpdate = true; tex.anisotropy = 16;
+            return tex;
+        }
+        function createBrick(catKey, itemIdx, pos) {
+            const cat = CATS[catKey];
+            const item = cat.items[itemIdx];
+            const w = item.w * UNIT, d = item.d * UNIT, h = item.h;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshPhysicalMaterial({
+                color: cat.color, roughness: 0.15, metalness: 0.05,
+                clearcoat: 1.0, clearcoatRoughness: 0.05
+            });
+            const bodyGeo = new THREE.BoxGeometry(w - 1.0, h, d - 1.0);
+            const body = new THREE.Mesh(bodyGeo, mat);
+            body.castShadow = true; body.receiveShadow = true;
+            group.add(body);
+            if (item.type !== "tile") {
+                const studMat = mat.clone();
+                for (let i = 0; i < item.w; i++) {
+                    for (let j = 0; j < item.d; j++) {
+                        const stud = new THREE.Mesh(
+                            new THREE.CylinderGeometry(STUD_R, STUD_R, STUD_H, 24), studMat);
+                        stud.position.set(
+                            (i - (item.w-1)/2) * UNIT,
+                            h/2 + STUD_H/2,
+                            (j - (item.d-1)/2) * UNIT);
+                        stud.castShadow = true;
+                        group.add(stud);
+                    }
+                }
+            }
+            const tubeMat = new THREE.MeshPhysicalMaterial({
+                color: cat.color, roughness: 0.3, metalness: 0.1
+            });
+            for (let i = 0; i < item.w; i++) {
+                for (let j = 0; j < item.d; j++) {
+                    const tube = new THREE.Mesh(
+                        new THREE.CylinderGeometry(TUBE_R + 0.5, TUBE_R + 0.5, TUBE_H, 24), tubeMat);
+                    tube.position.set(
+                        (i - (item.w-1)/2) * UNIT,
+                        -h/2 + TUBE_H/2,
+                        (j - (item.d-1)/2) * UNIT);
+                    group.add(tube);
+                    const hole = new THREE.Mesh(
+                        new THREE.CylinderGeometry(TUBE_R, TUBE_R, TUBE_H + 0.2, 24),
+                        new THREE.MeshBasicMaterial({color: 0x000000, opacity: 0.4, transparent: true}));
+                    hole.position.copy(tube.position);
+                    group.add(hole);
+                }
+            }
+            const labelTex = createLabelTexture(item.name, cat.color);
+            const labelMat = new THREE.MeshBasicMaterial({
+                map: labelTex, transparent: true, opacity: 0.98, side: THREE.DoubleSide
+            });
+            const lw = w * 0.92;
+            const lh = Math.min(h * 0.85, 80);
+            const labelF = new THREE.Mesh(new THREE.PlaneGeometry(lw, lh), labelMat);
+            labelF.position.set(0, 0, d/2 + 0.8);
+            group.add(labelF);
+            const labelB = labelF.clone();
+            labelB.rotation.y = Math.PI;
+            labelB.position.set(0, 0, -d/2 - 0.8);
+            group.add(labelB);
+            if (item.w >= 3) {
+                const labelL = new THREE.Mesh(new THREE.PlaneGeometry(d * 0.8, lh), labelMat);
+                labelL.rotation.y = -Math.PI/2;
+                labelL.position.set(-w/2 - 0.8, 0, 0);
+                group.add(labelL);
+                const labelR = labelL.clone();
+                labelR.rotation.y = Math.PI/2;
+                labelR.position.set(w/2 + 0.8, 0, 0);
+                group.add(labelR);
+            }
+            group.userData = {
+                catKey: catKey, itemIdx: itemIdx,
+                gridW: item.w, gridD: item.d, h: h,
+                color: cat.color, name: item.name,
+                catName: cat.name, type: item.type,
+                isBrick: true,
+                id: Math.random().toString(36).substr(2,9),
+                gridX: 0, gridZ: 0, gridY: 0,
+                isFloating: false
+            };
+            if (pos) {
+                group.position.copy(pos);
+            } else {
+                let placed = false, attempts = 0;
+                while (!placed && attempts < 50) {
+                    const gx = Math.floor((Math.random() - 0.5) * 16);
+                    const gz = Math.floor((Math.random() - 0.5) * 16);
+                    if (isGridFree(gx, gz, item.w, item.d, 0)) {
+                        group.position.set(gx * UNIT, h/2 + 80, gz * UNIT);
+                        group.userData.gridX = gx;
+                        group.userData.gridZ = gz;
+                        placed = true;
+                    }
+                    attempts++;
+                }
+                if (!placed) group.position.set(0, h/2 + 80, 0);
+            }
+            group.scale.set(0,0,0);
+            scene.add(group);
+            bricks.push(group);
+            updateStats(); updateViz();
+            const start = performance.now();
+            function anim(now) {
+                const t = Math.min((now-start)/600, 1);
+                const s = 1 - Math.pow(1-t, 3);
+                group.scale.set(s,s,s);
+                if (t < 1) requestAnimationFrame(anim);
+                else snapToGrid(group, false);
+            }
+            requestAnimationFrame(anim);
+            return group;
+        }
+        function isGridFree(gx, gz, w, d, gy) {
+            const halfW = w/2, halfD = d/2;
+            const left = gx - halfW, right = gx + halfW;
+            const back = gz - halfD, front = gz + halfD;
+            for (const b of bricks) {
+                if (b.userData.isFloating) continue;
+                const bLeft = b.userData.gridX - b.userData.gridW/2;
+                const bRight = b.userData.gridX + b.userData.gridW/2;
+                const bBack = b.userData.gridZ - b.userData.gridD/2;
+                const bFront = b.userData.gridZ + b.userData.gridD/2;
+                const bY = b.userData.gridY;
+                if (left < bRight && right > bLeft && back < bFront && front > bBack) {
+                    if (gy === bY) return false;
+                }
+            }
+            return true;
+        }
+
+        function snapToGrid(brick, isRoot) {
+            brick.userData.isFloating = false;
+            const u = UNIT;
+            const gx = Math.round(brick.position.x / u);
+            const gz = Math.round(brick.position.z / u);
+            let targetY = brick.userData.h/2 + 1.5;
+            let placedOn = null;
+            let bestDist = Infinity;
+            for (const other of bricks) {
+                if (other === brick || other.userData.isFloating) continue;
+                const otherTop = other.position.y + other.userData.h/2;
+                const oLeft = other.userData.gridX - other.userData.gridW/2;
+                const oRight = other.userData.gridX + other.userData.gridW/2;
+                const oBack = other.userData.gridZ - other.userData.gridD/2;
+                const oFront = other.userData.gridZ + other.userData.gridD/2;
+                const tLeft = gx - brick.userData.gridW/2;
+                const tRight = gx + brick.userData.gridW/2;
+                const tBack = gz - brick.userData.gridD/2;
+                const tFront = gz + brick.userData.gridD/2;
+                if (tLeft < oRight && tRight > oLeft && tBack < oFront && tFront > oBack) {
+                    const dist = Math.abs(brick.position.y - brick.userData.h/2 - otherTop);
+                    if (dist < bestDist && brick.position.y > otherTop - 5) {
+                        bestDist = dist;
+                        targetY = otherTop + brick.userData.h/2 + STUD_H - TUBE_H + 0.5;
+                        placedOn = other;
+                    }
+                }
+            }
+            const targetGY = Math.round((targetY - brick.userData.h/2) / 10);
+            if (!isGridFree(gx, gz, brick.userData.gridW, brick.userData.gridD, targetGY)) {
+                let found = false;
+                for (let r = 1; r <= 3 && !found; r++) {
+                    for (let dx = -r; dx <= r && !found; dx++) {
+                        for (let dz = -r; dz <= r && !found; dz++) {
+                            if (Math.abs(dx) + Math.abs(dz) > r) continue;
+                            if (isGridFree(gx+dx, gz+dz, brick.userData.gridW, brick.userData.gridD, targetGY)) {
+                                brick.userData.gridX = gx + dx;
+                                brick.userData.gridZ = gz + dz;
+                                found = true; break;
+                            }
+                        }
+                    }
+                }
+                if (!found) { brick.userData.gridX = gx; brick.userData.gridZ = gz; }
+            } else {
+                brick.userData.gridX = gx; brick.userData.gridZ = gz;
+            }
+            brick.userData.gridY = targetGY;
+            const startX = brick.position.x, startZ = brick.position.z, startY = brick.position.y;
+            const targetX = brick.userData.gridX * u, targetZ = brick.userData.gridZ * u;
+            const start = performance.now();
+            const duration = isRoot ? 400 : 300;
+            function fall(now) {
+                const t = Math.min((now - start) / duration, 1);
+                let ease;
+                if (t < 0.7) { ease = t * t; }
+                else {
+                    const t2 = (t - 0.7) / 0.3;
+                    ease = 0.49 + 0.51 * (1 - Math.pow(1 - t2, 2));
+                }
+                brick.position.x = startX + (targetX - startX) * ease;
+                brick.position.z = startZ + (targetZ - startZ) * ease;
+                brick.position.y = startY + (targetY - startY) * ease;
+                if (t < 1) { requestAnimationFrame(fall); }
+                else {
+                    brick.position.set(targetX, targetY, targetZ);
+                    const bounceStart = performance.now();
+                    function bounce(now2) {
+                        const bt = Math.min((now2 - bounceStart) / 150, 1);
+                        const by = Math.sin(bt * Math.PI) * 2 * (1 - bt);
+                        brick.position.y = targetY + by;
+                        if (bt < 1) requestAnimationFrame(bounce);
+                        else brick.position.y = targetY;
+                    }
+                    requestAnimationFrame(bounce);
+                    if (placedOn) createConnectEffect(targetX, targetY - brick.userData.h/2, targetZ);
+                }
+            }
+            requestAnimationFrame(fall);
+        }
+
+        function createConnectEffect(x, y, z) {
+            const flash = new THREE.PointLight(0xffd700, 6, 80);
+            flash.position.set(x, y + 15, z);
+            scene.add(flash);
+            const ringGeo = new THREE.RingGeometry(10, 16, 32);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0xffd700, transparent: true, opacity: 0.9, side: THREE.DoubleSide
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.position.set(x, y, z);
+            ring.rotation.x = Math.PI/2;
+            scene.add(ring);
+            let s = 1;
+            function animRing() {
+                s += 0.08;
+                ring.scale.set(s, s, 1);
+                ring.material.opacity = Math.max(0, 0.9 - (s-1)*0.25);
+                if (ring.material.opacity > 0) requestAnimationFrame(animRing);
+                else scene.remove(ring);
+            }
+            requestAnimationFrame(animRing);
+            for (let i = 0; i < 8; i++) {
+                const p = new THREE.Mesh(
+                    new THREE.SphereGeometry(1.5, 8, 8),
+                    new THREE.MeshBasicMaterial({color: 0xffd700, transparent: true, opacity: 0.8}));
+                const angle = (i / 8) * Math.PI * 2;
+                p.position.set(x + Math.cos(angle)*10, y + 10, z + Math.sin(angle)*10);
+                scene.add(p);
+                let ps = 1;
+                function animP() {
+                    ps += 0.1; p.position.y += 0.5;
+                    p.material.opacity = Math.max(0, 0.8 - (ps-1)*0.3);
+                    if (p.material.opacity > 0) requestAnimationFrame(animP);
+                    else scene.remove(p);
+                }
+                requestAnimationFrame(animP);
+            }
+            setTimeout(() => scene.remove(flash), 250);
+        }
+
+        function highlight(brick, on) {
+            brick.traverse(child => {
+                if (child.isMesh && child.material.emissive !== undefined) {
+                    if (on) {
+                        child.userData.origEmissive = child.material.emissive.getHex();
+                        child.material.emissive.setHex(0x444444);
+                    } else if (child.userData.origEmissive !== undefined) {
+                        child.material.emissive.setHex(child.userData.origEmissive);
+                    }
+                }
+            });
+        }

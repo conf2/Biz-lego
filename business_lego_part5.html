@@ -1,0 +1,292 @@
+
+        // ==========================================
+        // ВИЗУАЛИЗАЦИЯ БИЗНЕСА
+        // ==========================================
+        function updateViz() {
+            const websitesEl = document.getElementById("websites-content");
+            const funnelsEl = document.getElementById("funnels-content");
+            const crmEl = document.getElementById("crm-content");
+            const analyticsEl = document.getElementById("analytics-content");
+            const timeEl = document.getElementById("time-content");
+            const statusEl = document.getElementById("status-content");
+            if (bricks.length === 0) {
+                websitesEl.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:12px;">Добавьте элементы</div>';
+                funnelsEl.innerHTML = '';
+                crmEl.innerHTML = '';
+                analyticsEl.innerHTML = '';
+                timeEl.innerHTML = '';
+                statusEl.innerHTML = '<div class="status-badge status-err">Нет элементов</div>';
+                return;
+            }
+            const byCat = {};
+            bricks.forEach(b => {
+                const ck = b.userData.catKey;
+                if (!byCat[ck]) byCat[ck] = [];
+                byCat[ck].push(b);
+            });
+            // Сайты
+            const hasSite = byCat.marketing?.some(b => b.userData.name.includes("сайт") || b.userData.name.includes("Брендбук"));
+            const hasLanding = byCat.marketing?.some(b => b.userData.name.includes("квиз") || b.userData.name.includes("Оффер"));
+            let siteHtml = '<div class="biz-website"><div class="biz-website-header">';
+            siteHtml += '<div class="biz-dot" style="background:#ef4444;"></div>';
+            siteHtml += '<div class="biz-dot" style="background:#f97316;"></div>';
+            siteHtml += '<div class="biz-dot" style="background:#22c55e;"></div>';
+            siteHtml += '<span style="margin-left:8px;font-size:10px;color:#94a3b8;">' + (hasSite ? "yourbusiness.ru" : "site.com") + '</span></div>';
+            siteHtml += '<div class="biz-website-body"><div class="biz-website-sidebar"></div>';
+            siteHtml += '<div class="biz-website-content">' + (hasSite ? "🎯 Главная страница<br>конверсия 12%" : "⚠ Нужен сайт") + '</div></div></div>';
+            if (hasLanding) {
+                siteHtml += '<div class="biz-website" style="border-color:rgba(34,197,94,0.3);"><div class="biz-website-header">';
+                siteHtml += '<div class="biz-dot" style="background:#22c55e;"></div><span style="margin-left:8px;font-size:10px;color:#94a3b8;">Лендинг / Квиз</span></div>';
+                siteHtml += '<div class="biz-website-body"><div class="biz-website-content" style="background:rgba(34,197,94,0.1);color:#22c55e;">✅ Продающая страница<br>собирает заявки</div></div></div>';
+            }
+            websitesEl.innerHTML = siteHtml;
+            // Воронки
+            const hasFunnel = byCat.sales?.some(b => b.userData.name.includes("воронк"));
+            const hasAuto = byCat.sales?.some(b => b.userData.name.includes("Автоответ"));
+            const hasWarm = byCat.sales?.some(b => b.userData.name.includes("прогрев"));
+            if (hasFunnel || hasAuto || hasWarm) {
+                const stages = [
+                    {name:"Трафик", pct:100, color:"#f97316"},
+                    {name:"Заявка", pct: hasAuto ? 35 : 15, color:"#ef4444"},
+                    {name:"Прогрев", pct: hasWarm ? 25 : 10, color:"#f97316"},
+                    {name:"Продажа", pct: hasFunnel ? 12 : 5, color:"#22c55e"}
+                ];
+                let funnelHtml = '<div class="biz-funnel">';
+                stages.forEach(s => {
+                    funnelHtml += '<div class="funnel-stage" style="width:' + Math.max(40, s.pct) + '%;background:' + s.color + ';">' + s.name + " — " + s.pct + '%</div>';
+                });
+                funnelHtml += '</div><div style="display:flex;gap:8px;margin-top:8px;">';
+                funnelHtml += '<div style="flex:1;text-align:center;padding:8px;background:rgba(249,115,22,0.1);border-radius:6px;"><div style="font-size:16px;font-weight:800;color:#f97316;">' + (hasAuto ? "500+" : "50+") + '</div><div style="font-size:10px;color:#94a3b8;">заявок/мес</div></div>';
+                funnelHtml += '<div style="flex:1;text-align:center;padding:8px;background:rgba(34,197,94,0.1);border-radius:6px;"><div style="font-size:16px;font-weight:800;color:#22c55e;">' + (hasFunnel ? "60+" : "5+") + '</div><div style="font-size:10px;color:#94a3b8;">продаж/мес</div></div></div>';
+                funnelsEl.innerHTML = funnelHtml;
+            } else {
+                funnelsEl.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:12px;">Добавьте воронку продаж</div>';
+            }
+            // CRM
+            const hasCRM = byCat.foundation?.some(b => b.userData.name.includes("CRM")) || byCat.sales?.some(b => b.userData.name.includes("CRM"));
+            if (hasCRM) {
+                let crmHtml = '<div class="biz-crm">';
+                crmHtml += '<div class="crm-row"><div class="crm-avatar">ИП</div><div class="crm-info"><div class="crm-name">Иван Петров</div><div class="crm-status">Заявка с сайта • 2 часа назад</div></div><div class="crm-badge" style="background:rgba(249,115,22,0.2);color:#f97316;">В работе</div></div>';
+                crmHtml += '<div class="crm-row"><div class="crm-avatar">АС</div><div class="crm-info"><div class="crm-name">Анна Смирнова</div><div class="crm-status">Повторный звонок • Вчера</div></div><div class="crm-badge" style="background:rgba(34,197,94,0.2);color:#22c55e;">Оплата</div></div>';
+                crmHtml += '<div class="crm-row" style="border:none;"><div class="crm-avatar">МК</div><div class="crm-info"><div class="crm-name">Михаил Козлов</div><div class="crm-status">Email-рассылка • Сегодня</div></div><div class="crm-badge" style="background:rgba(59,130,246,0.2);color:#3b82f6;">Новый</div></div></div>';
+                crmHtml += '<div class="biz-chat"><div class="chat-msg chat-in">Здравствуйте! Хочу узнать о вашем продукте</div><div class="chat-msg chat-out">Добрый день! Отправляю коммерческое предложение 👇</div><div class="chat-msg chat-in">Отлично, готов обсудить детали завтра</div></div>';
+                crmEl.innerHTML = crmHtml;
+            } else {
+                crmEl.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:12px;">Добавьте CRM для управления клиентами</div>';
+            }
+            // Аналитика
+            const hasKPI = byCat.analytics?.some(b => b.userData.name.includes("KPI"));
+            const hasAudit = byCat.analytics?.some(b => b.userData.name.includes("Аудит"));
+            const hasForecast = byCat.analytics?.some(b => b.userData.name.includes("Прогноз"));
+            const revenue = hasForecast ? 850 : hasKPI ? 620 : 340;
+            const growth = hasForecast ? "+34%" : hasKPI ? "+18%" : "+5%";
+            let analHtml = '<div class="biz-chart">';
+            const bars = [40, 55, 45, 70, 85, 60, 90];
+            bars.forEach((h, i) => {
+                analHtml += '<div class="chart-bar" style="height:' + h + '%;background:' + (i === 6 ? "#22c55e" : "#3b82f6") + ';"></div>';
+            });
+            analHtml += '</div><div style="display:flex;gap:8px;">';
+            analHtml += '<div style="flex:1;text-align:center;padding:10px;background:rgba(59,130,246,0.1);border-radius:8px;border:1px solid rgba(59,130,246,0.2);"><div style="font-size:20px;font-weight:800;color:#3b82f6;">' + revenue + 'K ₽</div><div style="font-size:10px;color:#94a3b8;">выручка/мес</div></div>';
+            analHtml += '<div style="flex:1;text-align:center;padding:10px;background:rgba(34,197,94,0.1);border-radius:8px;border:1px solid rgba(34,197,94,0.2);"><div style="font-size:20px;font-weight:800;color:#22c55e;">' + growth + '</div><div style="font-size:10px;color:#94a3b8;">рост</div></div></div>';
+            if (hasAudit) {
+                analHtml += '<div style="margin-top:10px;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px;border:1px solid rgba(239,68,68,0.2);"><div style="font-size:11px;color:#ef4444;font-weight:600;">⚠ Найдено 3 точки роста</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">Оптимизация воронки +12% к конверсии</div></div>';
+            }
+            analyticsEl.innerHTML = analHtml;
+            // Время
+            const hasFree = byCat.foundation?.some(b => b.userData.name.includes("Освобождение"));
+            const hasDelegate = byCat.sales?.some(b => b.userData.name.includes("Делегирование"));
+            const freePct = hasFree ? 30 : hasDelegate ? 15 : 5;
+            const clockDeg = (freePct / 100) * 360;
+            let timeHtml = '<div class="time-freedom"><div class="time-clock" style="background:conic-gradient(#3b82f6 0deg,#3b82f6 ' + clockDeg + 'deg,rgba(51,65,85,0.5) ' + clockDeg + 'deg);"><span>' + freePct + '%</span></div><div class="time-info"><div class="time-label">Личного времени сохранено</div><div class="time-value">' + Math.round(freePct * 0.01 * 168) + ' ч/нед</div></div></div>';
+            timeHtml += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+            if (hasDelegate) timeHtml += '<span style="padding:4px 10px;background:rgba(59,130,246,0.2);color:#3b82f6;border-radius:12px;font-size:10px;font-weight:600;">✓ Рутина делегирована</span>';
+            if (hasFree) timeHtml += '<span style="padding:4px 10px;background:rgba(34,197,94,0.2);color:#22c55e;border-radius:12px;font-size:10px;font-weight:600;">✓ Автоматизация 30%</span>';
+            timeHtml += '<span style="padding:4px 10px;background:rgba(100,116,139,0.2);color:#94a3b8;border-radius:12px;font-size:10px;font-weight:600;">⏱ ' + (168 - Math.round(freePct * 0.01 * 168)) + ' ч занято</span></div>';
+            timeEl.innerHTML = timeHtml;
+            // Статус
+            const foundation = byCat.foundation?.length || 0;
+            const marketing = byCat.marketing?.length || 0;
+            const sales = byCat.sales?.length || 0;
+            const analytics = byCat.analytics?.length || 0;
+            let statusClass = "status-err";
+            let statusText = "Критические пробелы";
+            if (foundation >= 2 && marketing >= 2 && sales >= 2 && analytics >= 1) {
+                statusClass = "status-ok"; statusText = "✓ Система готова к запуску";
+            } else if (foundation >= 1 && (marketing >= 1 || sales >= 1)) {
+                statusClass = "status-warn"; statusText = "⚠ Работает, есть пробелы";
+            }
+            let statusHtml = '<div class="status-badge ' + statusClass + '">' + statusText + '</div><div style="margin-top:12px;font-size:11px;color:#94a3b8;line-height:1.6;">';
+            if (foundation < 2) statusHtml += "• Добавьте фундамент (почта, CRM)<br>";
+            if (marketing < 2) statusHtml += "• Добавьте маркетинг (реклама, трафик)<br>";
+            if (sales < 2) statusHtml += "• Добавьте продажи (воронка, отдел)<br>";
+            if (analytics < 1) statusHtml += "• Добавьте аналитику (KPI, аудит)";
+            statusHtml += "</div>";
+            statusEl.innerHTML = statusHtml;
+        }
+        function updateStats() {
+            document.getElementById("s-count").textContent = bricks.length;
+            let links = 0;
+            for (const b of bricks) {
+                for (const other of bricks) {
+                    if (b === other) continue;
+                    const bTop = b.position.y + b.userData.h/2;
+                    const oBottom = other.position.y - other.userData.h/2;
+                    if (Math.abs(oBottom - bTop - STUD_H + TUBE_H) < 5) {
+                        const bLeft = b.userData.gridX - b.userData.gridW/2;
+                        const bRight = b.userData.gridX + b.userData.gridW/2;
+                        const bBack = b.userData.gridZ - b.userData.gridD/2;
+                        const bFront = b.userData.gridZ + b.userData.gridD/2;
+                        const oLeft = other.userData.gridX - other.userData.gridW/2;
+                        const oRight = other.userData.gridX + other.userData.gridW/2;
+                        const oBack = other.userData.gridZ - other.userData.gridD/2;
+                        const oFront = other.userData.gridZ + other.userData.gridD/2;
+                        if (oLeft < bRight && oRight > bLeft && oBack < bFront && oFront > bBack) {
+                            links++;
+                        }
+                    }
+                }
+            }
+            document.getElementById("s-links").textContent = Math.floor(links/2);
+        }
+
+        // ==========================================
+        // UI ФУНКЦИИ
+        // ==========================================
+        window.clearScene = function() {
+            bricks.forEach(b => scene.remove(b));
+            bricks = [];
+            selectedBrick = null;
+            updateStats();
+            updateViz();
+        };
+
+        window.loadDemo = function() {
+            window.clearScene();
+            const count = 8 + Math.floor(Math.random() * 8);
+            const demo = [];
+            const usedPositions = new Set();
+            const fundCount = 1 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < fundCount; i++) {
+                const itemIdx = Math.floor(Math.random() * CATS.foundation.items.length);
+                let gx, gz;
+                do {
+                    gx = Math.floor((Math.random() - 0.5) * 8);
+                    gz = Math.floor((Math.random() - 0.5) * 8);
+                } while (usedPositions.has(gx + "," + gz));
+                usedPositions.add(gx + "," + gz);
+                demo.push(["foundation", itemIdx, gx, gz, 0]);
+            }
+            const markCount = 1 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < markCount; i++) {
+                const itemIdx = Math.floor(Math.random() * CATS.marketing.items.length);
+                const onTop = Math.random() > 0.5 && demo.length > 0;
+                let gx, gz, gy;
+                if (onTop) {
+                    const base = demo[Math.floor(Math.random() * Math.min(3, demo.length))];
+                    gx = base[2]; gz = base[3]; gy = 1;
+                } else {
+                    do {
+                        gx = Math.floor((Math.random() - 0.5) * 8);
+                        gz = Math.floor((Math.random() - 0.5) * 8);
+                    } while (usedPositions.has(gx + "," + gz));
+                    usedPositions.add(gx + "," + gz);
+                    gy = 0;
+                }
+                demo.push(["marketing", itemIdx, gx, gz, gy]);
+            }
+            const salesCount = 1 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < salesCount; i++) {
+                const itemIdx = Math.floor(Math.random() * CATS.sales.items.length);
+                const onTop = Math.random() > 0.5;
+                let gx, gz, gy;
+                if (onTop && demo.length > 0) {
+                    const base = demo[Math.floor(Math.random() * demo.length)];
+                    gx = base[2] + Math.floor(Math.random() * 3 - 1);
+                    gz = base[3] + Math.floor(Math.random() * 3 - 1);
+                    gy = 1 + Math.floor(Math.random() * 2);
+                } else {
+                    do {
+                        gx = Math.floor((Math.random() - 0.5) * 8);
+                        gz = Math.floor((Math.random() - 0.5) * 8);
+                    } while (usedPositions.has(gx + "," + gz));
+                    usedPositions.add(gx + "," + gz);
+                    gy = 0;
+                }
+                demo.push(["sales", itemIdx, gx, gz, gy]);
+            }
+            if (Math.random() > 0.3) {
+                const itemIdx = Math.floor(Math.random() * CATS.analytics.items.length);
+                let gx, gz;
+                do {
+                    gx = Math.floor((Math.random() - 0.5) * 8);
+                    gz = Math.floor((Math.random() - 0.5) * 8);
+                } while (usedPositions.has(gx + "," + gz));
+                usedPositions.add(gx + "," + gz);
+                demo.push(["analytics", itemIdx, gx, gz, 0]);
+            }
+            demo.forEach((d, idx) => {
+                setTimeout(() => {
+                    const b = createBrick(d[0], d[1]);
+                    b.userData.gridX = d[2];
+                    b.userData.gridZ = d[3];
+                    b.position.x = d[2] * UNIT;
+                    b.position.z = d[3] * UNIT;
+                }, idx * 300);
+            });
+        };
+
+        // ==========================================
+        // ГЕНЕРАЦИЯ САЙДБАРА
+        // ==========================================
+        const catsEl = document.getElementById("cats");
+        Object.keys(CATS).forEach((key, idx) => {
+            const cat = CATS[key];
+            const catEl = document.createElement("div");
+            catEl.className = "cat" + (idx === 0 ? " expanded" : "");
+            const colorHex = "#" + cat.color.toString(16).padStart(6, "0");
+            let html = '<div class="cat-h" style="color:' + colorHex + '"><div class="cat-d" style="background:' + colorHex + '"></div>' + cat.name + '</div>';
+            html += '<div class="cat-items">';
+            cat.items.forEach((item, i) => {
+                html += '<div class="item" data-cat="' + key + '" data-idx="' + i + '"><div class="item-ico" style="background:' + colorHex + '"></div>' + item.name + '</div>';
+            });
+            html += '</div>';
+            catEl.innerHTML = html;
+            catEl.querySelector(".cat-h").addEventListener("click", () => {
+                catEl.classList.toggle("expanded");
+            });
+            catEl.querySelectorAll(".item").forEach(itemEl => {
+                itemEl.addEventListener("click", () => {
+                    const ck = itemEl.dataset.cat;
+                    const ii = parseInt(itemEl.dataset.idx);
+                    createBrick(ck, ii);
+                });
+            });
+            catsEl.appendChild(catEl);
+        });
+
+        // ==========================================
+        // РЕНДЕР ЛУП
+        // ==========================================
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener("resize", () => {
+            camera.aspect = (window.innerWidth * 0.55) / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth * 0.55, window.innerHeight);
+        });
+
+        setTimeout(() => {
+            document.getElementById("loading").style.opacity = "0";
+            setTimeout(() => {
+                document.getElementById("loading").style.display = "none";
+            }, 500);
+        }, 1000);
+
+    </script>
+</body>
+</html>

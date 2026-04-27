@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бизнес-Лего 3D — Физический конструктор</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; overflow: hidden; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0b0f19; color: #e2e8f0; }
+        #canvas-container { width: 55vw; height: 100vh; position: absolute; top: 0; left: 280px; }
+        .sidebar { position: absolute; left: 0; top: 0; width: 280px; height: 100%; background: rgba(11,15,25,0.98); overflow-y: auto; padding: 20px; z-index: 10; scrollbar-width: thin; border-right: 1px solid rgba(148,163,184,0.1); }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .header { font-size: 22px; font-weight: 800; background: linear-gradient(135deg,#667eea,#764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .sub { font-size: 11px; color: #64748b; margin-bottom: 16px; line-height: 1.4; }
+        .cat { margin-bottom: 8px; border-radius: 10px; background: rgba(30,41,59,0.4); border: 1px solid rgba(148,163,184,0.08); overflow: hidden; }
+        .cat-h { padding: 12px 14px; font-weight: 700; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .cat-d { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
+        .cat-items { max-height: 0; overflow: hidden; transition: max-height 0.4s; }
+        .cat.expanded .cat-items { max-height: 600px; overflow-y: auto; }
+        .item { padding: 8px 12px; margin: 0 10px 4px; background: rgba(51,65,85,0.3); border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.2s; display: flex; align-items: center; gap: 8px; color: #cbd5e1; border: 1px solid transparent; }
+        .item:hover { background: rgba(51,65,85,0.6); border-color: rgba(100,116,139,0.3); transform: translateX(3px); color: #fff; }
+        .item-ico { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+        .viz-panel { position: absolute; right: 0; top: 0; width: calc(45vw - 280px); height: 100%; background: rgba(11,15,25,0.98); overflow-y: auto; padding: 20px; z-index: 10; scrollbar-width: thin; border-left: 1px solid rgba(148,163,184,0.1); }
+        .viz-header { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .viz-sub { font-size: 11px; color: #64748b; margin-bottom: 16px; }
+        .viz-card { background: rgba(30,41,59,0.5); border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid rgba(148,163,184,0.08); }
+        .viz-card h4 { font-size: 12px; font-weight: 600; margin-bottom: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .biz-website { background: linear-gradient(135deg,#1e293b,#0f172a); border-radius: 8px; padding: 12px; border: 1px solid rgba(100,116,139,0.2); margin-bottom: 8px; }
+        .biz-website-header { height: 20px; background: rgba(51,65,85,0.5); border-radius: 4px; margin-bottom: 8px; display: flex; align-items: center; gap: 4px; padding: 0 8px; }
+        .biz-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .biz-website-body { display: flex; gap: 8px; }
+        .biz-website-sidebar { width: 30%; height: 60px; background: rgba(51,65,85,0.3); border-radius: 4px; }
+        .biz-website-content { flex: 1; height: 60px; background: rgba(51,65,85,0.2); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 11px; }
+        .biz-funnel { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 8px 0; }
+        .funnel-stage { display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 600; border-radius: 4px; height: 28px; transition: all 0.3s; }
+        .biz-chart { height: 80px; display: flex; align-items: flex-end; gap: 4px; padding: 8px; background: rgba(51,65,85,0.2); border-radius: 8px; margin-bottom: 8px; }
+        .chart-bar { flex: 1; border-radius: 3px 3px 0 0; transition: height 0.5s ease; min-height: 4px; }
+        .biz-crm { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+        .crm-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(34,197,94,0.1); }
+        .crm-avatar { width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg,#22c55e,#16a34a); display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; }
+        .crm-info { flex: 1; }
+        .crm-name { font-size: 11px; font-weight: 600; color: #e2e8f0; }
+        .crm-status { font-size: 9px; color: #94a3b8; }
+        .crm-badge { padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 600; }
+        .biz-chat { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+        .chat-msg { padding: 8px 12px; border-radius: 12px; font-size: 11px; max-width: 80%; }
+        .chat-in { background: rgba(51,65,85,0.4); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .chat-out { background: linear-gradient(135deg,#667eea,#764ba2); align-self: flex-end; border-bottom-right-radius: 4px; }
+        .time-freedom { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); border-radius: 8px; margin-bottom: 8px; }
+        .time-clock { width: 50px; height: 50px; border-radius: 50%; background: conic-gradient(#3b82f6 0deg, #3b82f6 252deg, rgba(51,65,85,0.5) 252deg); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #3b82f6; position: relative; }
+        .time-clock::before { content: ''; position: absolute; width: 40px; height: 40px; border-radius: 50%; background: rgba(11,15,25,0.9); }
+        .time-clock span { position: relative; z-index: 1; }
+        .time-info { flex: 1; }
+        .time-label { font-size: 11px; color: #94a3b8; }
+        .time-value { font-size: 18px; font-weight: 800; color: #3b82f6; }
+        .metric-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(148,163,184,0.08); }
+        .metric-label { font-size: 12px; color: #94a3b8; }
+        .metric-value { font-size: 14px; font-weight: 700; }
+        .metric-bar { width: 100%; height: 4px; background: rgba(51,65,85,0.4); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+        .metric-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-top: 8px; }
+        .status-ok { background: rgba(34,197,94,0.2); color: #22c55e; }
+        .status-warn { background: rgba(249,115,22,0.2); color: #f97316; }
+        .status-err { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .controls { position: absolute; left: 300px; top: 20px; display: flex; gap: 8px; z-index: 10; }
+        .btn { padding: 10px 16px; background: rgba(30,41,59,0.8); border: 1px solid rgba(148,163,184,0.2); color: #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; }
+        .btn:hover { background: rgba(51,65,85,0.9); }
+        .hint { position: absolute; left: 300px; bottom: 20px; background: rgba(11,15,25,0.8); padding: 8px 20px; border-radius: 20px; font-size: 12px; color: #64748b; pointer-events: none; z-index: 10; border: 1px solid rgba(148,163,184,0.1); }
+        .stats { position: absolute; left: 300px; top: 60px; display: flex; gap: 12px; z-index: 10; }
+        .stat { background: rgba(11,15,25,0.8); padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(148,163,184,0.1); }
+        .stat-v { font-size: 20px; font-weight: 800; background: linear-gradient(135deg,#667eea,#764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-l { font-size: 10px; color: #64748b; text-transform: uppercase; }
+        .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 24px; font-weight: 800; color: #667eea; z-index: 100; pointer-events: none; transition: opacity 0.5s; }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">Загрузка 3D...</div>
+    <div class="sidebar" id="sidebar">
+        <div class="header">БИЗНЕС-ЛЕГО</div>
+        <div class="sub">140+ деталей • Физика • Под ключ<br>Кликайте элемент → появляется в 3D<br>Перетаскивайте — конструкция двигается вместе</div>
+        <div id="cats"></div>
+    </div>
+    <div class="controls">
+        <button class="btn" onclick="clearScene()">Очистить</button>
+        <button class="btn" onclick="loadDemo()">🎲 Случайная демо</button>
+    </div>
+    <div class="stats">
+        <div class="stat"><div class="stat-v" id="s-count">0</div><div class="stat-l">Деталей</div></div>
+        <div class="stat"><div class="stat-v" id="s-links">0</div><div class="stat-l">Связей</div></div>
+    </div>
+    <div id="canvas-container"></div>
+    <div class="viz-panel" id="viz-panel">
+        <div class="viz-header">🏢 Визуализация бизнеса</div>
+        <div class="viz-sub">Как выглядит ваша конструкция в реальности</div>
+        <div class="viz-card" id="viz-websites">
+            <h4>🌐 Сайты и веб-присутствие</h4>
+            <div id="websites-content"></div>
+        </div>
+        <div class="viz-card" id="viz-funnels">
+            <h4>🎯 Воронки продаж</h4>
+            <div id="funnels-content"></div>
+        </div>
+        <div class="viz-card" id="viz-crm">
+            <h4>💼 CRM-система</h4>
+            <div id="crm-content"></div>
+        </div>
+        <div class="viz-card" id="viz-analytics">
+            <h4>📊 Аналитика и рост</h4>
+            <div id="analytics-content"></div>
+        </div>
+        <div class="viz-card" id="viz-time">
+            <h4>⏱ Освобождение времени</h4>
+            <div id="time-content"></div>
+        </div>
+        <div class="viz-card" id="viz-status">
+            <h4>⚡ Статус системы</h4>
+            <div id="status-content"><div class="status-badge status-err">Нет элементов</div></div>
+        </div>
+    </div>
+    <div class="hint">🖱 ЛКМ — выбрать и перетащить (с конструкцией сверху) • 🖱 ПКМ — вращение • 📜 — зум</div>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ==========================================
+        // КОНФИГУРАЦИЯ LEGO
+        // ==========================================
+        const UNIT = 24;
+        const STUD_R = 5.0;
+        const STUD_H = 3.6;
+        const TUBE_R = 3.6;
+        const TUBE_H = 3.2;
+
+        // ==========================================
+        // КАТЕГОРИИ
+        // ==========================================
+        const CATS = {
+            foundation: {
+                name: 'Фундамент бизнеса', color: 0x22c55e,
+                items: [
+                    {name:'Настройка почты', w:2, d:2, h:6.4, type:'plate'},
+                    {name:'SSL-сертификат', w:1, d:2, h:19.2, type:'brick'},
+                    {name:'Связка доменов', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Базовая CRM', w:2, d:2, h:38.4, type:'tall'},
+                    {name:'Облачное хранилище', w:2, d:4, h:6.4, type:'plate'},
+                    {name:'API интеграции', w:1, d:4, h:6.4, type:'tile'},
+                    {name:'Привлечение инвестиций', w:2, d:3, h:38.4, type:'tall'},
+                    {name:'Построение бизнеса', w:4, d:4, h:19.2, type:'base'},
+                    {name:'Оценка бизнеса', w:2, d:3, h:19.2, type:'brick'},
+                    {name:'Юридические задачи', w:2, d:2, h:6.4, type:'plate'},
+                    {name:'Проверка контрагента', w:1, d:3, h:19.2, type:'brick'},
+                    {name:'Создание копии бизнеса', w:2, d:4, h:19.2, type:'brick'},
+                    {name:'Вывод из операционки', w:2, d:4, h:19.2, type:'slope'},
+                    {name:'Освобождение 30% времени', w:2, d:3, h:6.4, type:'tile'}
+                ]
+            },
+            marketing: {
+                name: 'Маркетинг и лиды', color: 0xf97316,
+                items: [
+                    {name:'Создание квиза', w:2, d:2, h:19.2, type:'slope'},
+                    {name:'Запуск рекламы', w:2, d:4, h:19.2, type:'brick'},
+                    {name:'SEO оптимизация', w:2, d:4, h:6.4, type:'plate'},
+                    {name:'Упаковка смыслов', w:2, d:3, h:19.2, type:'slope'},
+                    {name:'AB тесты', w:2, d:2, h:19.2, type:'round'},
+                    {name:'Маркетинг под ключ', w:2, d:4, h:38.4, type:'tall'},
+                    {name:'Продающий скрипт', w:1, d:4, h:19.2, type:'brick'},
+                    {name:'Работа с отзывами', w:2, d:2, h:6.4, type:'plate'},
+                    {name:'Оффер', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Google Ads', w:1, d:2, h:6.4, type:'tile'},
+                    {name:'Яндекс Ads', w:1, d:2, h:6.4, type:'tile'},
+                    {name:'Email-рассылка', w:1, d:4, h:6.4, type:'plate'},
+                    {name:'Таргет Instagram', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Таргет VK', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Таргет Telegram', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Работа с блогерами', w:2, d:3, h:19.2, type:'slope'},
+                    {name:'Нейминг', w:2, d:2, h:19.2, type:'round'},
+                    {name:'Логотип', w:2, d:2, h:19.2, type:'round'},
+                    {name:'Разработка сайта', w:2, d:4, h:38.4, type:'tall'},
+                    {name:'Брендбук', w:2, d:3, h:19.2, type:'brick'}
+                ]
+            },
+            sales: {
+                name: 'Продажи и контент', color: 0xef4444,
+                items: [
+                    {name:'Сценарий прогревов', w:2, d:3, h:19.2, type:'brick'},
+                    {name:'Настройка продаж', w:2, d:2, h:38.4, type:'tall'},
+                    {name:'Автоответчики', w:2, d:2, h:6.4, type:'plate'},
+                    {name:'Контент-план', w:1, d:4, h:19.2, type:'brick'},
+                    {name:'CRM касса', w:2, d:2, h:19.2, type:'round'},
+                    {name:'Настройка воронки', w:2, d:4, h:19.2, type:'slope'},
+                    {name:'Построение отдела', w:2, d:3, h:38.4, type:'tall'},
+                    {name:'Найм сотрудников', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Обучающий курс', w:2, d:4, h:6.4, type:'plate'},
+                    {name:'Финансовая мотивация', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Геймификация', w:2, d:2, h:19.2, type:'slope'},
+                    {name:'Создание регламента', w:2, d:3, h:6.4, type:'plate'},
+                    {name:'Визуализация БП', w:2, d:4, h:19.2, type:'brick'},
+                    {name:'Внедрение CRM', w:2, d:2, h:38.4, type:'tall'},
+                    {name:'Делегирование рутины', w:2, d:4, h:6.4, type:'tile'},
+                    {name:'Система мотивации', w:2, d:3, h:19.2, type:'brick'},
+                    {name:'Карта взаимодействия', w:3, d:3, h:6.4, type:'plate'},
+                    {name:'Модернизация отдела', w:2, d:4, h:19.2, type:'slope'}
+                ]
+            },
+            analytics: {
+                name: 'Аналитика и рост', color: 0x3b82f6,
+                items: [
+                    {name:'Прогнозная аналитика', w:2, d:2, h:38.4, type:'tall'},
+                    {name:'Аудит системы', w:2, d:4, h:19.2, type:'brick'},
+                    {name:'KPI панель', w:4, d:4, h:6.4, type:'base'},
+                    {name:'Анализ конкурентов', w:2, d:3, h:19.2, type:'brick'},
+                    {name:'Масштабирование', w:2, d:4, h:19.2, type:'slope'},
+                    {name:'Увеличение выручки', w:2, d:3, h:38.4, type:'tall'},
+                    {name:'Оптимизация расходов', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Точки роста', w:2, d:2, h:19.2, type:'round'},
+                    {name:'Оцифровка задач', w:2, d:4, h:6.4, type:'plate'},
+                    {name:'Автоматизация процессов', w:2, d:4, h:38.4, type:'tall'},
+                    {name:'Финансовый учет', w:2, d:3, h:19.2, type:'brick'},
+                    {name:'Тайный покупатель', w:2, d:2, h:19.2, type:'round'},
+                    {name:'Карта освобождения', w:3, d:3, h:6.4, type:'plate'},
+                    {name:'Предиктивный набор', w:2, d:2, h:19.2, type:'slope'},
+                    {name:'Базы данных', w:2, d:4, h:6.4, type:'tile'}
+                ]
+            }
+        };
+
+        // ==========================================
+        // 3D СЦЕНА
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0f19);
+        scene.fog = new THREE.Fog(0x0b0f19, 300, 900);
+
+        const camera = new THREE.PerspectiveCamera(45, (window.innerWidth*0.55)/window.innerHeight, 0.1, 1500);
+        camera.position.set(160, 200, 200);
+
+        const renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth * 0.55, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2.05;
+        controls.minDistance = 60;
+        controls.maxDistance = 600;
+        controls.target.set(0, 40, 0);
+        controls.mouseButtons = {LEFT: null, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE};
+
+        // Освещение
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(80, 200, 80);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.set(2048, 2048);
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 800;
+        dirLight.shadow.camera.left = -200;
+        dirLight.shadow.camera.right = 200;
+        dirLight.shadow.camera.top = 200;
+        dirLight.shadow.camera.bottom = -200;
+        dirLight.shadow.bias = -0.0005;
+        scene.add(dirLight);
+        scene.add(new THREE.DirectionalLight(0x667eea, 0.3).position.set(-80, 60, -80));
+
+        // Базовая пластина
+        const baseGeo = new THREE.BoxGeometry(48*UNIT, 3, 48*UNIT);
+        const baseMat = new THREE.MeshPhysicalMaterial({color: 0x0f172a, roughness: 0.6, metalness: 0.2, clearcoat: 0.4});
+        const baseplate = new THREE.Mesh(baseGeo, baseMat);
+        baseplate.position.y = -1.5;
+        baseplate.receiveShadow = true;
+        scene.add(baseplate);
+
+        const grid = new THREE.GridHelper(48*UNIT, 48, 0x1e293b, 0x0f172a);
+        grid.position.y = 0.02;
+        scene.add(grid);
+
+        // ==========================================
+        // ПЕРЕТАСКИВАНИЕ С КОНСТРУКЦИЕЙ СВЕРХУ
+        // ==========================================
+        let bricks = [];
+        let selectedBrick = null;
+        let draggedBrick = null;
+        let dragOffset = new THREE.Vector3();
+        let dragPlane = new THREE.Plane();
+        const mouse = new THREE.Vector2();
+        const raycaster = new THREE.Raycaster();
+        const canvas = renderer.domElement;
+
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        function getBricksOnTop(parentBrick) {
+            const result = [];
+            const parentTop = parentBrick.position.y + parentBrick.userData.h/2;
+            for (const b of bricks) {
+                if (b === parentBrick) continue;
+                const bBottom = b.position.y - b.userData.h/2;
+                if (Math.abs(bBottom - parentTop - STUD_H + TUBE_H) < 8) {
+                    const pLeft = parentBrick.userData.gridX - parentBrick.userData.gridW/2;
+                    const pRight = parentBrick.userData.gridX + parentBrick.userData.gridW/2;
+                    const pBack = parentBrick.userData.gridZ - parentBrick.userData.gridD/2;
+                    const pFront = parentBrick.userData.gridZ + parentBrick.userData.gridD/2;
+                    const bLeft = b.userData.gridX - b.userData.gridW/2;
+                    const bRight = b.userData.gridX + b.userData.gridW/2;
+                    const bBack = b.userData.gridZ - b.userData.gridD/2;
+                    const bFront = b.userData.gridZ + b.userData.gridD/2;
+                    if (bLeft < pRight && bRight > pLeft && bBack < pFront && bFront > pBack) {
+                        result.push(b);
+                        result.push(...getBricksOnTop(b));
+                    }
+                }
+            }
+            return result;
+        }
+
+        function getTowerRoot(brick) {
+            for (const b of bricks) {
+                if (b === brick) continue;
+                const bTop = b.position.y + b.userData.h/2;
+                const brickBottom = brick.position.y - brick.userData.h/2;
+                if (Math.abs(brickBottom - bTop - STUD_H + TUBE_H) < 8) {
+                    const bLeft = b.userData.gridX - b.userData.gridW/2;
+                    const bRight = b.userData.gridX + b.userData.gridW/2;
+                    const bBack = b.userData.gridZ - b.userData.gridD/2;
+                    const bFront = b.userData.gridZ + b.userData.gridD/2;
+                    const brickLeft = brick.userData.gridX - brick.userData.gridW/2;
+                    const brickRight = brick.userData.gridX + brick.userData.gridW/2;
+                    const brickBack = brick.userData.gridZ - brick.userData.gridD/2;
+                    const brickFront = brick.userData.gridZ + brick.userData.gridD/2;
+                    if (brickLeft < bRight && brickRight > bLeft && brickBack < bFront && brickFront > bBack) {
+                        return getTowerRoot(b);
+                    }
+                }
+            }
+            return brick;
+        }
+
+        function onPointerDown(e) {
+            e.preventDefault();
+            canvas.setPointerCapture(e.pointerId);
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(bricks, true);
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while (obj.parent && !obj.userData.isBrick) obj = obj.parent;
+                if (obj.userData.isBrick) {
+                    draggedBrick = getTowerRoot(obj);
+                    selectedBrick = obj;
+                    controls.enabled = false;
+                    const normal = new THREE.Vector3(0, 1, 0);
+                    dragPlane.setFromNormalAndCoplanarPoint(normal, draggedBrick.position);
+                    const intersectPoint = new THREE.Vector3();
+                    raycaster.ray.intersectPlane(dragPlane, intersectPoint);
+                    if (intersectPoint) dragOffset.copy(intersectPoint).sub(draggedBrick.position);
+                    const tower = [draggedBrick, ...getBricksOnTop(draggedBrick)];
+                    tower.forEach(b => {
+                        b.userData.dragStartY = b.position.y;
+                        b.position.y += 40;
+                        b.userData.isFloating = true;
+                    });
+                    highlight(draggedBrick, true);
+                    canvas.style.cursor = 'grabbing';
+                }
+            }
+        }
+
+        function onPointerMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            if (draggedBrick) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersectPoint = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(dragPlane, intersectPoint)) {
+                    const newX = intersectPoint.x - dragOffset.x;
+                    const newZ = intersectPoint.z - dragOffset.z;
+                    const dx = newX - draggedBrick.position.x;
+                    const dz = newZ - draggedBrick.position.z;
+                    draggedBrick.position.x = newX;
+                    draggedBrick.position.z = newZ;
+                    const tower = getBricksOnTop(draggedBrick);
+                    tower.forEach(b => { b.position.x += dx; b.position.z += dz; });
+                }
+            } else {
+                raycaster.setFromCamera(mouse, camera);
+                const hits = raycaster.intersectObjects(bricks, true);
+                canvas.style.cursor = hits.length > 0 ? 'grab' : 'default';
+            }
+        }
+
+        function onPointerUp(e) {
+            if (draggedBrick) {
+                const tower = [draggedBrick, ...getBricksOnTop(draggedBrick)];
+                snapToGrid(draggedBrick, true);
+                function dropNext(index) {
+                    if (index >= tower.length) { updateViz(); return; }
+                    const b = tower[index];
+                    setTimeout(() => { snapToGrid(b, false); setTimeout(() => dropNext(index + 1), 200); }, 100);
+                }
+                setTimeout(() => dropNext(1), 300);
+                highlight(draggedBrick, false);
+                draggedBrick = null;
+                controls.enabled = true;
+                canvas.style.cursor = 'default';
+            }
+        }
+
+        canvas.addEventListener('pointerdown', onPointerDown);
+        canvas.addEventListener('pointermove', onPointerMove);
+        canvas.addEventListener('pointerup', onPointerUp);
+
+        // ==========================================
+        // КАЧЕСТВЕННЫЕ НАКЛЕЙКИ НА ВСЮ ДЕТАЛЬ
+        // ==========================================
+        function createLabelTexture(text, color) {
+            const c = document.createElement("canvas");
+            c.width = 2048; c.height = 1024;
+            const ctx = c.getContext("2d");
+            ctx.fillStyle = "#" + color.toString(16).padStart(6,"0");
+            ctx.fillRect(0,0,2048,1024);
+            const g = ctx.createLinearGradient(0,0,0,1024);
+            g.addColorStop(0,"rgba(255,255,255,0.4)");
+            g.addColorStop(0.5,"rgba(255,255,255,0.1)");
+            g.addColorStop(1,"rgba(0,0,0,0.3)");
+            ctx.fillStyle = g; ctx.fillRect(0,0,2048,1024);
+            ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 20;
+            ctx.strokeRect(40,40,1968,944);
+            ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.lineWidth = 8;
+            ctx.strokeRect(80,80,1888,864);
+            ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            let fontSize = 140;
+            ctx.font = `bold ${fontSize}px "Segoe UI", Arial, sans-serif`;
+            const metrics = ctx.measureText(text);
+            if (metrics.width > 1800) {
+                fontSize = Math.floor(140 * 1800 / metrics.width);
+                ctx.font = `bold ${fontSize}px "Segoe UI", Arial, sans-serif`;
+            }
+            const words = text.split(" "); const lines = []; let cur = "";
+            for (const w of words) {
+                const t = cur + w + " ";
+                if (ctx.measureText(t).width > 1800 && cur) {
+                    lines.push(cur.trim()); cur = w + " ";
+                } else { cur = t; }
+            }
+            lines.push(cur.trim());
+            if (lines.length > 2) {
+                fontSize = Math.floor(fontSize * 2 / lines.length);
+                ctx.font = `bold ${fontSize}px "Segoe UI", Arial, sans-serif`;
+            }
+            const lh = fontSize * 1.3;
+            const sy = 512 - (lines.length - 1) * lh / 2;
+            lines.forEach((l, i) => ctx.fillText(l, 1024, sy + i * lh));
+            ctx.fillStyle = "rgba(255,255,255,0.8)";
+            ctx.font = 'bold 60px "Segoe UI", Arial, sans-serif';
+            ctx.textAlign = "left"; ctx.fillText("R", 80, 120);
+            const tex = new THREE.CanvasTexture(c);
+            tex.needsUpdate = true; tex.anisotropy = 16;
+            return tex;
+        }
+        function createBrick(catKey, itemIdx, pos) {
+            const cat = CATS[catKey];
+            const item = cat.items[itemIdx];
+            const w = item.w * UNIT, d = item.d * UNIT, h = item.h;
+            const group = new THREE.Group();
+            const mat = new THREE.MeshPhysicalMaterial({
+                color: cat.color, roughness: 0.15, metalness: 0.05,
+                clearcoat: 1.0, clearcoatRoughness: 0.05
+            });
+            const bodyGeo = new THREE.BoxGeometry(w - 1.0, h, d - 1.0);
+            const body = new THREE.Mesh(bodyGeo, mat);
+            body.castShadow = true; body.receiveShadow = true;
+            group.add(body);
+            if (item.type !== "tile") {
+                const studMat = mat.clone();
+                for (let i = 0; i < item.w; i++) {
+                    for (let j = 0; j < item.d; j++) {
+                        const stud = new THREE.Mesh(
+                            new THREE.CylinderGeometry(STUD_R, STUD_R, STUD_H, 24), studMat);
+                        stud.position.set(
+                            (i - (item.w-1)/2) * UNIT,
+                            h/2 + STUD_H/2,
+                            (j - (item.d-1)/2) * UNIT);
+                        stud.castShadow = true;
+                        group.add(stud);
+                    }
+                }
+            }
+            const tubeMat = new THREE.MeshPhysicalMaterial({
+                color: cat.color, roughness: 0.3, metalness: 0.1
+            });
+            for (let i = 0; i < item.w; i++) {
+                for (let j = 0; j < item.d; j++) {
+                    const tube = new THREE.Mesh(
+                        new THREE.CylinderGeometry(TUBE_R + 0.5, TUBE_R + 0.5, TUBE_H, 24), tubeMat);
+                    tube.position.set(
+                        (i - (item.w-1)/2) * UNIT,
+                        -h/2 + TUBE_H/2,
+                        (j - (item.d-1)/2) * UNIT);
+                    group.add(tube);
+                    const hole = new THREE.Mesh(
+                        new THREE.CylinderGeometry(TUBE_R, TUBE_R, TUBE_H + 0.2, 24),
+                        new THREE.MeshBasicMaterial({color: 0x000000, opacity: 0.4, transparent: true}));
+                    hole.position.copy(tube.position);
+                    group.add(hole);
+                }
+            }
+            const labelTex = createLabelTexture(item.name, cat.color);
+            const labelMat = new THREE.MeshBasicMaterial({
+                map: labelTex, transparent: true, opacity: 0.98, side: THREE.DoubleSide
+            });
+            const lw = w * 0.92;
+            const lh = Math.min(h * 0.85, 80);
+            const labelF = new THREE.Mesh(new THREE.PlaneGeometry(lw, lh), labelMat);
+            labelF.position.set(0, 0, d/2 + 0.8);
+            group.add(labelF);
+            const labelB = labelF.clone();
+            labelB.rotation.y = Math.PI;
+            labelB.position.set(0, 0, -d/2 - 0.8);
+            group.add(labelB);
+            if (item.w >= 3) {
+                const labelL = new THREE.Mesh(new THREE.PlaneGeometry(d * 0.8, lh), labelMat);
+                labelL.rotation.y = -Math.PI/2;
+                labelL.position.set(-w/2 - 0.8, 0, 0);
+                group.add(labelL);
+                const labelR = labelL.clone();
+                labelR.rotation.y = Math.PI/2;
+                labelR.position.set(w/2 + 0.8, 0, 0);
+                group.add(labelR);
+            }
+            group.userData = {
+                catKey: catKey, itemIdx: itemIdx,
+                gridW: item.w, gridD: item.d, h: h,
+                color: cat.color, name: item.name,
+                catName: cat.name, type: item.type,
+                isBrick: true,
+                id: Math.random().toString(36).substr(2,9),
+                gridX: 0, gridZ: 0, gridY: 0,
+                isFloating: false
+            };
+            if (pos) {
+                group.position.copy(pos);
+            } else {
+                let placed = false, attempts = 0;
+                while (!placed && attempts < 50) {
+                    const gx = Math.floor((Math.random() - 0.5) * 16);
+                    const gz = Math.floor((Math.random() - 0.5) * 16);
+                    if (isGridFree(gx, gz, item.w, item.d, 0)) {
+                        group.position.set(gx * UNIT, h/2 + 80, gz * UNIT);
+                        group.userData.gridX = gx;
+                        group.userData.gridZ = gz;
+                        placed = true;
+                    }
+                    attempts++;
+                }
+                if (!placed) group.position.set(0, h/2 + 80, 0);
+            }
+            group.scale.set(0,0,0);
+            scene.add(group);
+            bricks.push(group);
+            updateStats(); updateViz();
+            const start = performance.now();
+            function anim(now) {
+                const t = Math.min((now-start)/600, 1);
+                const s = 1 - Math.pow(1-t, 3);
+                group.scale.set(s,s,s);
+                if (t < 1) requestAnimationFrame(anim);
+                else snapToGrid(group, false);
+            }
+            requestAnimationFrame(anim);
+            return group;
+        }
+        function isGridFree(gx, gz, w, d, gy) {
+            const halfW = w/2, halfD = d/2;
+            const left = gx - halfW, right = gx + halfW;
+            const back = gz - halfD, front = gz + halfD;
+            for (const b of bricks) {
+                if (b.userData.isFloating) continue;
+                const bLeft = b.userData.gridX - b.userData.gridW/2;
+                const bRight = b.userData.gridX + b.userData.gridW/2;
+                const bBack = b.userData.gridZ - b.userData.gridD/2;
+                const bFront = b.userData.gridZ + b.userData.gridD/2;
+                const bY = b.userData.gridY;
+                if (left < bRight && right > bLeft && back < bFront && front > bBack) {
+                    if (gy === bY) return false;
+                }
+            }
+            return true;
+        }
+
+        function snapToGrid(brick, isRoot) {
+            brick.userData.isFloating = false;
+            const u = UNIT;
+            const gx = Math.round(brick.position.x / u);
+            const gz = Math.round(brick.position.z / u);
+            let targetY = brick.userData.h/2 + 1.5;
+            let placedOn = null;
+            let bestDist = Infinity;
+            for (const other of bricks) {
+                if (other === brick || other.userData.isFloating) continue;
+                const otherTop = other.position.y + other.userData.h/2;
+                const oLeft = other.userData.gridX - other.userData.gridW/2;
+                const oRight = other.userData.gridX + other.userData.gridW/2;
+                const oBack = other.userData.gridZ - other.userData.gridD/2;
+                const oFront = other.userData.gridZ + other.userData.gridD/2;
+                const tLeft = gx - brick.userData.gridW/2;
+                const tRight = gx + brick.userData.gridW/2;
+                const tBack = gz - brick.userData.gridD/2;
+                const tFront = gz + brick.userData.gridD/2;
+                if (tLeft < oRight && tRight > oLeft && tBack < oFront && tFront > oBack) {
+                    const dist = Math.abs(brick.position.y - brick.userData.h/2 - otherTop);
+                    if (dist < bestDist && brick.position.y > otherTop - 5) {
+                        bestDist = dist;
+                        targetY = otherTop + brick.userData.h/2 + STUD_H - TUBE_H + 0.5;
+                        placedOn = other;
+                    }
+                }
+            }
+            const targetGY = Math.round((targetY - brick.userData.h/2) / 10);
+            if (!isGridFree(gx, gz, brick.userData.gridW, brick.userData.gridD, targetGY)) {
+                let found = false;
+                for (let r = 1; r <= 3 && !found; r++) {
+                    for (let dx = -r; dx <= r && !found; dx++) {
+                        for (let dz = -r; dz <= r && !found; dz++) {
+                            if (Math.abs(dx) + Math.abs(dz) > r) continue;
+                            if (isGridFree(gx+dx, gz+dz, brick.userData.gridW, brick.userData.gridD, targetGY)) {
+                                brick.userData.gridX = gx + dx;
+                                brick.userData.gridZ = gz + dz;
+                                found = true; break;
+                            }
+                        }
+                    }
+                }
+                if (!found) { brick.userData.gridX = gx; brick.userData.gridZ = gz; }
+            } else {
+                brick.userData.gridX = gx; brick.userData.gridZ = gz;
+            }
+            brick.userData.gridY = targetGY;
+            const startX = brick.position.x, startZ = brick.position.z, startY = brick.position.y;
+            const targetX = brick.userData.gridX * u, targetZ = brick.userData.gridZ * u;
+            const start = performance.now();
+            const duration = isRoot ? 400 : 300;
+            function fall(now) {
+                const t = Math.min((now - start) / duration, 1);
+                let ease;
+                if (t < 0.7) { ease = t * t; }
+                else {
+                    const t2 = (t - 0.7) / 0.3;
+                    ease = 0.49 + 0.51 * (1 - Math.pow(1 - t2, 2));
+                }
+                brick.position.x = startX + (targetX - startX) * ease;
+                brick.position.z = startZ + (targetZ - startZ) * ease;
+                brick.position.y = startY + (targetY - startY) * ease;
+                if (t < 1) { requestAnimationFrame(fall); }
+                else {
+                    brick.position.set(targetX, targetY, targetZ);
+                    const bounceStart = performance.now();
+                    function bounce(now2) {
+                        const bt = Math.min((now2 - bounceStart) / 150, 1);
+                        const by = Math.sin(bt * Math.PI) * 2 * (1 - bt);
+                        brick.position.y = targetY + by;
+                        if (bt < 1) requestAnimationFrame(bounce);
+                        else brick.position.y = targetY;
+                    }
+                    requestAnimationFrame(bounce);
+                    if (placedOn) createConnectEffect(targetX, targetY - brick.userData.h/2, targetZ);
+                }
+            }
+            requestAnimationFrame(fall);
+        }
+
+        function createConnectEffect(x, y, z) {
+            const flash = new THREE.PointLight(0xffd700, 6, 80);
+            flash.position.set(x, y + 15, z);
+            scene.add(flash);
+            const ringGeo = new THREE.RingGeometry(10, 16, 32);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0xffd700, transparent: true, opacity: 0.9, side: THREE.DoubleSide
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.position.set(x, y, z);
+            ring.rotation.x = Math.PI/2;
+            scene.add(ring);
+            let s = 1;
+            function animRing() {
+                s += 0.08;
+                ring.scale.set(s, s, 1);
+                ring.material.opacity = Math.max(0, 0.9 - (s-1)*0.25);
+                if (ring.material.opacity > 0) requestAnimationFrame(animRing);
+                else scene.remove(ring);
+            }
+            requestAnimationFrame(animRing);
+            for (let i = 0; i < 8; i++) {
+                const p = new THREE.Mesh(
+                    new THREE.SphereGeometry(1.5, 8, 8),
+                    new THREE.MeshBasicMaterial({color: 0xffd700, transparent: true, opacity: 0.8}));
+                const angle = (i / 8) * Math.PI * 2;
+                p.position.set(x + Math.cos(angle)*10, y + 10, z + Math.sin(angle)*10);
+                scene.add(p);
+                let ps = 1;
+                function animP() {
+                    ps += 0.1; p.position.y += 0.5;
+                    p.material.opacity = Math.max(0, 0.8 - (ps-1)*0.3);
+                    if (p.material.opacity > 0) requestAnimationFrame(animP);
+                    else scene.remove(p);
+                }
+                requestAnimationFrame(animP);
+            }
+            setTimeout(() => scene.remove(flash), 250);
+        }
+
+        function highlight(brick, on) {
+            brick.traverse(child => {
+                if (child.isMesh && child.material.emissive !== undefined) {
+                    if (on) {
+                        child.userData.origEmissive = child.material.emissive.getHex();
+                        child.material.emissive.setHex(0x444444);
+                    } else if (child.userData.origEmissive !== undefined) {
+                        child.material.emissive.setHex(child.userData.origEmissive);
+                    }
+                }
+            });
+        }
+        // ==========================================
+        // ВИЗУАЛИЗАЦИЯ БИЗНЕСА
+        // ==========================================
+        function updateViz() {
+            const websitesEl = document.getElementById("websites-content");
+            const funnelsEl = document.getElementById("funnels-content");
+            const crmEl = document.getElementById("crm-content");
+            const analyticsEl = document.getElementById("analytics-content");
+            const timeEl = document.getElementById("time-content");
+            const statusEl = document.getElementById("status-content");
+            if (bricks.length === 0) {
+                websitesEl.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:12px;">Добавьте элементы</div>';
+                funnelsEl.innerHTML = '';
+                crmEl.innerHTML = '';
+                analyticsEl.innerHTML = '';
+                timeEl.innerHTML = '';
+                statusEl.innerHTML = '<div class="status-badge status-err">Нет элементов</div>';
+                return;
+            }
+            const byCat = {};
+            bricks.forEach(b => {
+                const ck = b.userData.catKey;
+                if (!byCat[ck]) byCat[ck] = [];
+                byCat[ck].push(b);
+            });
+            // Сайты
+            const hasSite = byCat.marketing?.some(b => b.userData.name.includes("сайт") || b.userData.name.includes("Брендбук"));
+            const hasLanding = byCat.marketing?.some(b => b.userData.name.includes("квиз") || b.userData.name.includes("Оффер"));
+            let siteHtml = '<div class="biz-website"><div class="biz-website-header">';
+            siteHtml += '<div class="biz-dot" style="background:#ef4444;"></div>';
+            siteHtml += '<div class="biz-dot" style="background:#f97316;"></div>';
+            siteHtml += '<div class="biz-dot" style="background:#22c55e;"></div>';
+            siteHtml += '<span style="margin-left:8px;font-size:10px;color:#94a3b8;">' + (hasSite ? "yourbusiness.ru" : "site.com") + '</span></div>';
+            siteHtml += '<div class="biz-website-body"><div class="biz-website-sidebar"></div>';
+            siteHtml += '<div class="biz-website-content">' + (hasSite ? "🎯 Главная страница<br>конверсия 12%" : "⚠ Нужен сайт") + '</div></div></div>';
+            if (hasLanding) {
+                siteHtml += '<div class="biz-website" style="border-color:rgba(34,197,94,0.3);"><div class="biz-website-header">';
+                siteHtml += '<div class="biz-dot" style="background:#22c55e;"></div><span style="margin-left:8px;font-size:10px;color:#94a3b8;">Лендинг / Квиз</span></div>';
+                siteHtml += '<div class="biz-website-body"><div class="biz-website-content" style="background:rgba(34,197,94,0.1);color:#22c55e;">✅ Продающая страница<br>собирает заявки</div></div></div>';
+            }
+            websitesEl.innerHTML = siteHtml;
+            // Воронки
+            const hasFunnel = byCat.sales?.some(b => b.userData.name.includes("воронк"));
+            const hasAuto = byCat.sales?.some(b => b.userData.name.includes("Автоответ"));
+            const hasWarm = byCat.sales?.some(b => b.userData.name.includes("прогрев"));
+            if (hasFunnel || hasAuto || hasWarm) {
+                const stages = [
+                    {name:"Трафик", pct:100, color:"#f97316"},
+                    {name:"Заявка", pct: hasAuto ? 35 : 15, color:"#ef4444"},
+                    {name:"Прогрев", pct: hasWarm ? 25 : 10, color:"#f97316"},
+                    {name:"Продажа", pct: hasFunnel ? 12 : 5, color:"#22c55e"}
+                ];
+                let funnelHtml = '<div class="biz-funnel">';
+                stages.forEach(s => {
+                    funnelHtml += '<div class="funnel-stage" style="width:' + Math.max(40, s.pct) + '%;background:' + s.color + ';">' + s.name + " — " + s.pct + '%</div>';
+                });
+                funnelHtml += '</div><div style="display:flex;gap:8px;margin-top:8px;">';
+                funnelHtml += '<div style="flex:1;text-align:center;padding:8px;background:rgba(249,115,22,0.1);border-radius:6px;"><div style="font-size:16px;font-weight:800;color:#f97316;">' + (hasAuto ? "500+" : "50+") + '</div><div style="font-size:10px;color:#94a3b8;">заявок/мес</div></div>';
+                funnelHtml += '<div style="flex:1;text-align:center;padding:8px;background:rgba(34,197,94,0.1);border-radius:6px;"><div style="font-size:16px;font-weight:800;color:#22c55e;">' + (hasFunnel ? "60+" : "5+") + '</div><div style="font-size:10px;color:#94a3b8;">продаж/мес</div></div></div>';
+                funnelsEl.innerHTML = funnelHtml;
+            } else {
+                funnelsEl.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:12px;">Добавьте воронку продаж</div>';
+            }
+            // CRM
+            const hasCRM = byCat.foundation?.some(b => b.userData.name.includes("CRM")) || byCat.sales?.some(b => b.userData.name.includes("CRM"));
+            if (hasCRM) {
+                let crmHtml = '<div class="biz-crm">';
+                crmHtml += '<div class="crm-row"><div class="crm-avatar">ИП</div><div class="crm-info"><div class="crm-name">Иван Петров</div><div class="crm-status">Заявка с сайта • 2 часа назад</div></div><div class="crm-badge" style="background:rgba(249,115,22,0.2);color:#f97316;">В работе</div></div>';
+                crmHtml += '<div class="crm-row"><div class="crm-avatar">АС</div><div class="crm-info"><div class="crm-name">Анна Смирнова</div><div class="crm-status">Повторный звонок • Вчера</div></div><div class="crm-badge" style="background:rgba(34,197,94,0.2);color:#22c55e;">Оплата</div></div>';
+                crmHtml += '<div class="crm-row" style="border:none;"><div class="crm-avatar">МК</div><div class="crm-info"><div class="crm-name">Михаил Козлов</div><div class="crm-status">Email-рассылка • Сегодня</div></div><div class="crm-badge" style="background:rgba(59,130,246,0.2);color:#3b82f6;">Новый</div></div></div>';
+                crmHtml += '<div class="biz-chat"><div class="chat-msg chat-in">Здравствуйте! Хочу узнать о вашем продукте</div><div class="chat-msg chat-out">Добрый день! Отправляю коммерческое предложение 👇</div><div class="chat-msg chat-in">Отлично, готов обсудить детали завтра</div></div>';
+                crmEl.innerHTML = crmHtml;
+            } else {
+                crmEl.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:12px;">Добавьте CRM для управления клиентами</div>';
+            }
+            // Аналитика
+            const hasKPI = byCat.analytics?.some(b => b.userData.name.includes("KPI"));
+            const hasAudit = byCat.analytics?.some(b => b.userData.name.includes("Аудит"));
+            const hasForecast = byCat.analytics?.some(b => b.userData.name.includes("Прогноз"));
+            const revenue = hasForecast ? 850 : hasKPI ? 620 : 340;
+            const growth = hasForecast ? "+34%" : hasKPI ? "+18%" : "+5%";
+            let analHtml = '<div class="biz-chart">';
+            const bars = [40, 55, 45, 70, 85, 60, 90];
+            bars.forEach((h, i) => {
+                analHtml += '<div class="chart-bar" style="height:' + h + '%;background:' + (i === 6 ? "#22c55e" : "#3b82f6") + ';"></div>';
+            });
+            analHtml += '</div><div style="display:flex;gap:8px;">';
+            analHtml += '<div style="flex:1;text-align:center;padding:10px;background:rgba(59,130,246,0.1);border-radius:8px;border:1px solid rgba(59,130,246,0.2);"><div style="font-size:20px;font-weight:800;color:#3b82f6;">' + revenue + 'K ₽</div><div style="font-size:10px;color:#94a3b8;">выручка/мес</div></div>';
+            analHtml += '<div style="flex:1;text-align:center;padding:10px;background:rgba(34,197,94,0.1);border-radius:8px;border:1px solid rgba(34,197,94,0.2);"><div style="font-size:20px;font-weight:800;color:#22c55e;">' + growth + '</div><div style="font-size:10px;color:#94a3b8;">рост</div></div></div>';
+            if (hasAudit) {
+                analHtml += '<div style="margin-top:10px;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px;border:1px solid rgba(239,68,68,0.2);"><div style="font-size:11px;color:#ef4444;font-weight:600;">⚠ Найдено 3 точки роста</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">Оптимизация воронки +12% к конверсии</div></div>';
+            }
+            analyticsEl.innerHTML = analHtml;
+            // Время
+            const hasFree = byCat.foundation?.some(b => b.userData.name.includes("Освобождение"));
+            const hasDelegate = byCat.sales?.some(b => b.userData.name.includes("Делегирование"));
+            const freePct = hasFree ? 30 : hasDelegate ? 15 : 5;
+            const clockDeg = (freePct / 100) * 360;
+            let timeHtml = '<div class="time-freedom"><div class="time-clock" style="background:conic-gradient(#3b82f6 0deg,#3b82f6 ' + clockDeg + 'deg,rgba(51,65,85,0.5) ' + clockDeg + 'deg);"><span>' + freePct + '%</span></div><div class="time-info"><div class="time-label">Личного времени сохранено</div><div class="time-value">' + Math.round(freePct * 0.01 * 168) + ' ч/нед</div></div></div>';
+            timeHtml += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+            if (hasDelegate) timeHtml += '<span style="padding:4px 10px;background:rgba(59,130,246,0.2);color:#3b82f6;border-radius:12px;font-size:10px;font-weight:600;">✓ Рутина делегирована</span>';
+            if (hasFree) timeHtml += '<span style="padding:4px 10px;background:rgba(34,197,94,0.2);color:#22c55e;border-radius:12px;font-size:10px;font-weight:600;">✓ Автоматизация 30%</span>';
+            timeHtml += '<span style="padding:4px 10px;background:rgba(100,116,139,0.2);color:#94a3b8;border-radius:12px;font-size:10px;font-weight:600;">⏱ ' + (168 - Math.round(freePct * 0.01 * 168)) + ' ч занято</span></div>';
+            timeEl.innerHTML = timeHtml;
+            // Статус
+            const foundation = byCat.foundation?.length || 0;
+            const marketing = byCat.marketing?.length || 0;
+            const sales = byCat.sales?.length || 0;
+            const analytics = byCat.analytics?.length || 0;
+            let statusClass = "status-err";
+            let statusText = "Критические пробелы";
+            if (foundation >= 2 && marketing >= 2 && sales >= 2 && analytics >= 1) {
+                statusClass = "status-ok"; statusText = "✓ Система готова к запуску";
+            } else if (foundation >= 1 && (marketing >= 1 || sales >= 1)) {
+                statusClass = "status-warn"; statusText = "⚠ Работает, есть пробелы";
+            }
+            let statusHtml = '<div class="status-badge ' + statusClass + '">' + statusText + '</div><div style="margin-top:12px;font-size:11px;color:#94a3b8;line-height:1.6;">';
+            if (foundation < 2) statusHtml += "• Добавьте фундамент (почта, CRM)<br>";
+            if (marketing < 2) statusHtml += "• Добавьте маркетинг (реклама, трафик)<br>";
+            if (sales < 2) statusHtml += "• Добавьте продажи (воронка, отдел)<br>";
+            if (analytics < 1) statusHtml += "• Добавьте аналитику (KPI, аудит)";
+            statusHtml += "</div>";
+            statusEl.innerHTML = statusHtml;
+        }
+        function updateStats() {
+            document.getElementById("s-count").textContent = bricks.length;
+            let links = 0;
+            for (const b of bricks) {
+                for (const other of bricks) {
+                    if (b === other) continue;
+                    const bTop = b.position.y + b.userData.h/2;
+                    const oBottom = other.position.y - other.userData.h/2;
+                    if (Math.abs(oBottom - bTop - STUD_H + TUBE_H) < 5) {
+                        const bLeft = b.userData.gridX - b.userData.gridW/2;
+                        const bRight = b.userData.gridX + b.userData.gridW/2;
+                        const bBack = b.userData.gridZ - b.userData.gridD/2;
+                        const bFront = b.userData.gridZ + b.userData.gridD/2;
+                        const oLeft = other.userData.gridX - other.userData.gridW/2;
+                        const oRight = other.userData.gridX + other.userData.gridW/2;
+                        const oBack = other.userData.gridZ - other.userData.gridD/2;
+                        const oFront = other.userData.gridZ + other.userData.gridD/2;
+                        if (oLeft < bRight && oRight > bLeft && oBack < bFront && oFront > bBack) {
+                            links++;
+                        }
+                    }
+                }
+            }
+            document.getElementById("s-links").textContent = Math.floor(links/2);
+        }
+
+        // ==========================================
+        // UI ФУНКЦИИ
+        // ==========================================
+        window.clearScene = function() {
+            bricks.forEach(b => scene.remove(b));
+            bricks = [];
+            selectedBrick = null;
+            updateStats();
+            updateViz();
+        };
+
+        window.loadDemo = function() {
+            window.clearScene();
+            const count = 8 + Math.floor(Math.random() * 8);
+            const demo = [];
+            const usedPositions = new Set();
+            const fundCount = 1 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < fundCount; i++) {
+                const itemIdx = Math.floor(Math.random() * CATS.foundation.items.length);
+                let gx, gz;
+                do {
+                    gx = Math.floor((Math.random() - 0.5) * 8);
+                    gz = Math.floor((Math.random() - 0.5) * 8);
+                } while (usedPositions.has(gx + "," + gz));
+                usedPositions.add(gx + "," + gz);
+                demo.push(["foundation", itemIdx, gx, gz, 0]);
+            }
+            const markCount = 1 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < markCount; i++) {
+                const itemIdx = Math.floor(Math.random() * CATS.marketing.items.length);
+                const onTop = Math.random() > 0.5 && demo.length > 0;
+                let gx, gz, gy;
+                if (onTop) {
+                    const base = demo[Math.floor(Math.random() * Math.min(3, demo.length))];
+                    gx = base[2]; gz = base[3]; gy = 1;
+                } else {
+                    do {
+                        gx = Math.floor((Math.random() - 0.5) * 8);
+                        gz = Math.floor((Math.random() - 0.5) * 8);
+                    } while (usedPositions.has(gx + "," + gz));
+                    usedPositions.add(gx + "," + gz);
+                    gy = 0;
+                }
+                demo.push(["marketing", itemIdx, gx, gz, gy]);
+            }
+            const salesCount = 1 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < salesCount; i++) {
+                const itemIdx = Math.floor(Math.random() * CATS.sales.items.length);
+                const onTop = Math.random() > 0.5;
+                let gx, gz, gy;
+                if (onTop && demo.length > 0) {
+                    const base = demo[Math.floor(Math.random() * demo.length)];
+                    gx = base[2] + Math.floor(Math.random() * 3 - 1);
+                    gz = base[3] + Math.floor(Math.random() * 3 - 1);
+                    gy = 1 + Math.floor(Math.random() * 2);
+                } else {
+                    do {
+                        gx = Math.floor((Math.random() - 0.5) * 8);
+                        gz = Math.floor((Math.random() - 0.5) * 8);
+                    } while (usedPositions.has(gx + "," + gz));
+                    usedPositions.add(gx + "," + gz);
+                    gy = 0;
+                }
+                demo.push(["sales", itemIdx, gx, gz, gy]);
+            }
+            if (Math.random() > 0.3) {
+                const itemIdx = Math.floor(Math.random() * CATS.analytics.items.length);
+                let gx, gz;
+                do {
+                    gx = Math.floor((Math.random() - 0.5) * 8);
+                    gz = Math.floor((Math.random() - 0.5) * 8);
+                } while (usedPositions.has(gx + "," + gz));
+                usedPositions.add(gx + "," + gz);
+                demo.push(["analytics", itemIdx, gx, gz, 0]);
+            }
+            demo.forEach((d, idx) => {
+                setTimeout(() => {
+                    const b = createBrick(d[0], d[1]);
+                    b.userData.gridX = d[2];
+                    b.userData.gridZ = d[3];
+                    b.position.x = d[2] * UNIT;
+                    b.position.z = d[3] * UNIT;
+                }, idx * 300);
+            });
+        };
+
+        // ==========================================
+        // ГЕНЕРАЦИЯ САЙДБАРА
+        // ==========================================
+        const catsEl = document.getElementById("cats");
+        Object.keys(CATS).forEach((key, idx) => {
+            const cat = CATS[key];
+            const catEl = document.createElement("div");
+            catEl.className = "cat" + (idx === 0 ? " expanded" : "");
+            const colorHex = "#" + cat.color.toString(16).padStart(6, "0");
+            let html = '<div class="cat-h" style="color:' + colorHex + '"><div class="cat-d" style="background:' + colorHex + '"></div>' + cat.name + '</div>';
+            html += '<div class="cat-items">';
+            cat.items.forEach((item, i) => {
+                html += '<div class="item" data-cat="' + key + '" data-idx="' + i + '"><div class="item-ico" style="background:' + colorHex + '"></div>' + item.name + '</div>';
+            });
+            html += '</div>';
+            catEl.innerHTML = html;
+            catEl.querySelector(".cat-h").addEventListener("click", () => {
+                catEl.classList.toggle("expanded");
+            });
+            catEl.querySelectorAll(".item").forEach(itemEl => {
+                itemEl.addEventListener("click", () => {
+                    const ck = itemEl.dataset.cat;
+                    const ii = parseInt(itemEl.dataset.idx);
+                    createBrick(ck, ii);
+                });
+            });
+            catsEl.appendChild(catEl);
+        });
+
+        // ==========================================
+        // РЕНДЕР ЛУП
+        // ==========================================
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener("resize", () => {
+            camera.aspect = (window.innerWidth * 0.55) / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth * 0.55, window.innerHeight);
+        });
+
+        setTimeout(() => {
+            document.getElementById("loading").style.opacity = "0";
+            setTimeout(() => {
+                document.getElementById("loading").style.display = "none";
+            }, 500);
+        }, 1000);
+
+    </script>
+</body>
+</html>
