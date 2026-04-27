@@ -1,0 +1,114 @@
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ==========================================
+        // КОНФИГУРАЦИЯ LEGO
+        // ==========================================
+        const UNIT = 24;
+        const STUD_R = 5.0;
+        const STUD_H = 3.6;
+        const TUBE_R = 3.6;
+        const TUBE_H = 3.2;
+
+        // ==========================================
+        // КАТЕГОРИИ
+        // ==========================================
+        const CATS = {
+            foundation: {
+                name: 'Фундамент бизнеса', color: 0x22c55e,
+                items: [
+                    {name:'Настройка почты', w:2, d:2, h:6.4, type:'plate'},
+                    {name:'SSL-сертификат', w:1, d:2, h:19.2, type:'brick'},
+                    {name:'Связка доменов', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Базовая CRM', w:2, d:2, h:38.4, type:'tall'},
+                    {name:'Облачное хранилище', w:2, d:4, h:6.4, type:'plate'},
+                    {name:'API интеграции', w:1, d:4, h:6.4, type:'tile'},
+                    {name:'Привлечение инвестиций', w:2, d:3, h:38.4, type:'tall'},
+                    {name:'Построение бизнеса', w:4, d:4, h:19.2, type:'base'},
+                    {name:'Оценка бизнеса', w:2, d:3, h:19.2, type:'brick'},
+                    {name:'Юридические задачи', w:2, d:2, h:6.4, type:'plate'},
+                    {name:'Проверка контрагента', w:1, d:3, h:19.2, type:'brick'},
+                    {name:'Создание копии бизнеса', w:2, d:4, h:19.2, type:'brick'},
+                    {name:'Вывод из операционки', w:2, d:4, h:19.2, type:'slope'},
+                    {name:'Освобождение 30% времени', w:2, d:3, h:6.4, type:'tile'}
+                ]
+            },
+            marketing: {
+                name: 'Маркетинг и лиды', color: 0xf97316,
+                items: [
+                    {name:'Создание квиза', w:2, d:2, h:19.2, type:'slope'},
+                    {name:'Запуск рекламы', w:2, d:4, h:19.2, type:'brick'},
+                    {name:'SEO оптимизация', w:2, d:4, h:6.4, type:'plate'},
+                    {name:'Упаковка смыслов', w:2, d:3, h:19.2, type:'slope'},
+                    {name:'AB тесты', w:2, d:2, h:19.2, type:'round'},
+                    {name:'Маркетинг под ключ', w:2, d:4, h:38.4, type:'tall'},
+                    {name:'Продающий скрипт', w:1, d:4, h:19.2, type:'brick'},
+                    {name:'Работа с отзывами', w:2, d:2, h:6.4, type:'plate'},
+                    {name:'Оффер', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Google Ads', w:1, d:2, h:6.4, type:'tile'},
+                    {name:'Яндекс Ads', w:1, d:2, h:6.4, type:'tile'},
+                    {name:'Email-рассылка', w:1, d:4, h:6.4, type:'plate'},
+                    {name:'Таргет Instagram', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Таргет VK', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Таргет Telegram', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Работа с блогерами', w:2, d:3, h:19.2, type:'slope'},
+                    {name:'Нейминг', w:2, d:2, h:19.2, type:'round'},
+                    {name:'Логотип', w:2, d:2, h:19.2, type:'round'},
+                    {name:'Разработка сайта', w:2, d:4, h:38.4, type:'tall'},
+                    {name:'Брендбук', w:2, d:3, h:19.2, type:'brick'}
+                ]
+            },
+            sales: {
+                name: 'Продажи и контент', color: 0xef4444,
+                items: [
+                    {name:'Сценарий прогревов', w:2, d:3, h:19.2, type:'brick'},
+                    {name:'Настройка продаж', w:2, d:2, h:38.4, type:'tall'},
+                    {name:'Автоответчики', w:2, d:2, h:6.4, type:'plate'},
+                    {name:'Контент-план', w:1, d:4, h:19.2, type:'brick'},
+                    {name:'CRM касса', w:2, d:2, h:19.2, type:'round'},
+                    {name:'Настройка воронки', w:2, d:4, h:19.2, type:'slope'},
+                    {name:'Построение отдела', w:2, d:3, h:38.4, type:'tall'},
+                    {name:'Найм сотрудников', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Обучающий курс', w:2, d:4, h:6.4, type:'plate'},
+                    {name:'Финансовая мотивация', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Геймификация', w:2, d:2, h:19.2, type:'slope'},
+                    {name:'Создание регламента', w:2, d:3, h:6.4, type:'plate'},
+                    {name:'Визуализация БП', w:2, d:4, h:19.2, type:'brick'},
+                    {name:'Внедрение CRM', w:2, d:2, h:38.4, type:'tall'},
+                    {name:'Делегирование рутины', w:2, d:4, h:6.4, type:'tile'},
+                    {name:'Система мотивации', w:2, d:3, h:19.2, type:'brick'},
+                    {name:'Карта взаимодействия', w:3, d:3, h:6.4, type:'plate'},
+                    {name:'Модернизация отдела', w:2, d:4, h:19.2, type:'slope'}
+                ]
+            },
+            analytics: {
+                name: 'Аналитика и рост', color: 0x3b82f6,
+                items: [
+                    {name:'Прогнозная аналитика', w:2, d:2, h:38.4, type:'tall'},
+                    {name:'Аудит системы', w:2, d:4, h:19.2, type:'brick'},
+                    {name:'KPI панель', w:4, d:4, h:6.4, type:'base'},
+                    {name:'Анализ конкурентов', w:2, d:3, h:19.2, type:'brick'},
+                    {name:'Масштабирование', w:2, d:4, h:19.2, type:'slope'},
+                    {name:'Увеличение выручки', w:2, d:3, h:38.4, type:'tall'},
+                    {name:'Оптимизация расходов', w:2, d:2, h:19.2, type:'brick'},
+                    {name:'Точки роста', w:2, d:2, h:19.2, type:'round'},
+                    {name:'Оцифровка задач', w:2, d:4, h:6.4, type:'plate'},
+                    {name:'Автоматизация процессов', w:2, d:4, h:38.4, type:'tall'},
+                    {name:'Финансовый учет', w:2, d:3, h:19.2, type:'brick'},
+                    {name:'Тайный покупатель', w:2, d:2, h:19.2, type:'round'},
+                    {name:'Карта освобождения', w:3, d:3, h:6.4, type:'plate'},
+                    {name:'Предиктивный набор', w:2, d:2, h:19.2, type:'slope'},
+                    {name:'Базы данных', w:2, d:4, h:6.4, type:'tile'}
+                ]
+            }
+        };

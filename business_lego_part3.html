@@ -1,0 +1,192 @@
+
+        // ==========================================
+        // 3D СЦЕНА
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0f19);
+        scene.fog = new THREE.Fog(0x0b0f19, 300, 900);
+
+        const camera = new THREE.PerspectiveCamera(45, (window.innerWidth*0.55)/window.innerHeight, 0.1, 1500);
+        camera.position.set(160, 200, 200);
+
+        const renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth * 0.55, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2.05;
+        controls.minDistance = 60;
+        controls.maxDistance = 600;
+        controls.target.set(0, 40, 0);
+        controls.mouseButtons = {LEFT: null, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE};
+
+        // Освещение
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(80, 200, 80);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.set(2048, 2048);
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 800;
+        dirLight.shadow.camera.left = -200;
+        dirLight.shadow.camera.right = 200;
+        dirLight.shadow.camera.top = 200;
+        dirLight.shadow.camera.bottom = -200;
+        dirLight.shadow.bias = -0.0005;
+        scene.add(dirLight);
+        scene.add(new THREE.DirectionalLight(0x667eea, 0.3).position.set(-80, 60, -80));
+
+        // Базовая пластина
+        const baseGeo = new THREE.BoxGeometry(48*UNIT, 3, 48*UNIT);
+        const baseMat = new THREE.MeshPhysicalMaterial({color: 0x0f172a, roughness: 0.6, metalness: 0.2, clearcoat: 0.4});
+        const baseplate = new THREE.Mesh(baseGeo, baseMat);
+        baseplate.position.y = -1.5;
+        baseplate.receiveShadow = true;
+        scene.add(baseplate);
+
+        const grid = new THREE.GridHelper(48*UNIT, 48, 0x1e293b, 0x0f172a);
+        grid.position.y = 0.02;
+        scene.add(grid);
+
+        // ==========================================
+        // ПЕРЕТАСКИВАНИЕ С КОНСТРУКЦИЕЙ СВЕРХУ
+        // ==========================================
+        let bricks = [];
+        let selectedBrick = null;
+        let draggedBrick = null;
+        let dragOffset = new THREE.Vector3();
+        let dragPlane = new THREE.Plane();
+        const mouse = new THREE.Vector2();
+        const raycaster = new THREE.Raycaster();
+        const canvas = renderer.domElement;
+
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        function getBricksOnTop(parentBrick) {
+            const result = [];
+            const parentTop = parentBrick.position.y + parentBrick.userData.h/2;
+            for (const b of bricks) {
+                if (b === parentBrick) continue;
+                const bBottom = b.position.y - b.userData.h/2;
+                if (Math.abs(bBottom - parentTop - STUD_H + TUBE_H) < 8) {
+                    const pLeft = parentBrick.userData.gridX - parentBrick.userData.gridW/2;
+                    const pRight = parentBrick.userData.gridX + parentBrick.userData.gridW/2;
+                    const pBack = parentBrick.userData.gridZ - parentBrick.userData.gridD/2;
+                    const pFront = parentBrick.userData.gridZ + parentBrick.userData.gridD/2;
+                    const bLeft = b.userData.gridX - b.userData.gridW/2;
+                    const bRight = b.userData.gridX + b.userData.gridW/2;
+                    const bBack = b.userData.gridZ - b.userData.gridD/2;
+                    const bFront = b.userData.gridZ + b.userData.gridD/2;
+                    if (bLeft < pRight && bRight > pLeft && bBack < pFront && bFront > pBack) {
+                        result.push(b);
+                        result.push(...getBricksOnTop(b));
+                    }
+                }
+            }
+            return result;
+        }
+
+        function getTowerRoot(brick) {
+            for (const b of bricks) {
+                if (b === brick) continue;
+                const bTop = b.position.y + b.userData.h/2;
+                const brickBottom = brick.position.y - brick.userData.h/2;
+                if (Math.abs(brickBottom - bTop - STUD_H + TUBE_H) < 8) {
+                    const bLeft = b.userData.gridX - b.userData.gridW/2;
+                    const bRight = b.userData.gridX + b.userData.gridW/2;
+                    const bBack = b.userData.gridZ - b.userData.gridD/2;
+                    const bFront = b.userData.gridZ + b.userData.gridD/2;
+                    const brickLeft = brick.userData.gridX - brick.userData.gridW/2;
+                    const brickRight = brick.userData.gridX + brick.userData.gridW/2;
+                    const brickBack = brick.userData.gridZ - brick.userData.gridD/2;
+                    const brickFront = brick.userData.gridZ + brick.userData.gridD/2;
+                    if (brickLeft < bRight && brickRight > bLeft && brickBack < bFront && brickFront > bBack) {
+                        return getTowerRoot(b);
+                    }
+                }
+            }
+            return brick;
+        }
+
+        function onPointerDown(e) {
+            e.preventDefault();
+            canvas.setPointerCapture(e.pointerId);
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(bricks, true);
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while (obj.parent && !obj.userData.isBrick) obj = obj.parent;
+                if (obj.userData.isBrick) {
+                    draggedBrick = getTowerRoot(obj);
+                    selectedBrick = obj;
+                    controls.enabled = false;
+                    const normal = new THREE.Vector3(0, 1, 0);
+                    dragPlane.setFromNormalAndCoplanarPoint(normal, draggedBrick.position);
+                    const intersectPoint = new THREE.Vector3();
+                    raycaster.ray.intersectPlane(dragPlane, intersectPoint);
+                    if (intersectPoint) dragOffset.copy(intersectPoint).sub(draggedBrick.position);
+                    const tower = [draggedBrick, ...getBricksOnTop(draggedBrick)];
+                    tower.forEach(b => {
+                        b.userData.dragStartY = b.position.y;
+                        b.position.y += 40;
+                        b.userData.isFloating = true;
+                    });
+                    highlight(draggedBrick, true);
+                    canvas.style.cursor = 'grabbing';
+                }
+            }
+        }
+
+        function onPointerMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            if (draggedBrick) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersectPoint = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(dragPlane, intersectPoint)) {
+                    const newX = intersectPoint.x - dragOffset.x;
+                    const newZ = intersectPoint.z - dragOffset.z;
+                    const dx = newX - draggedBrick.position.x;
+                    const dz = newZ - draggedBrick.position.z;
+                    draggedBrick.position.x = newX;
+                    draggedBrick.position.z = newZ;
+                    const tower = getBricksOnTop(draggedBrick);
+                    tower.forEach(b => { b.position.x += dx; b.position.z += dz; });
+                }
+            } else {
+                raycaster.setFromCamera(mouse, camera);
+                const hits = raycaster.intersectObjects(bricks, true);
+                canvas.style.cursor = hits.length > 0 ? 'grab' : 'default';
+            }
+        }
+
+        function onPointerUp(e) {
+            if (draggedBrick) {
+                const tower = [draggedBrick, ...getBricksOnTop(draggedBrick)];
+                snapToGrid(draggedBrick, true);
+                function dropNext(index) {
+                    if (index >= tower.length) { updateViz(); return; }
+                    const b = tower[index];
+                    setTimeout(() => { snapToGrid(b, false); setTimeout(() => dropNext(index + 1), 200); }, 100);
+                }
+                setTimeout(() => dropNext(1), 300);
+                highlight(draggedBrick, false);
+                draggedBrick = null;
+                controls.enabled = true;
+                canvas.style.cursor = 'default';
+            }
+        }
+
+        canvas.addEventListener('pointerdown', onPointerDown);
+        canvas.addEventListener('pointermove', onPointerMove);
+        canvas.addEventListener('pointerup', onPointerUp);
