@@ -1,21 +1,14 @@
 import {
-  IDEAS,
   applyRandomDemo,
   canGoNext,
   createInitialState,
-  evaluateResult,
-  hydrateState,
   nextStep,
   resetState,
-  serializeState,
-  STEPS,
   toggleBlock
 } from "./state.js";
 import { renderContent, renderTop } from "./ui.js";
 
-const STORAGE_KEY = "biz_lego_mvp_state_v2";
 const state = createInitialState();
-hydrateState(state, localStorage.getItem(STORAGE_KEY));
 
 const els = {
   startOverlay: document.getElementById("startOverlay"),
@@ -24,9 +17,6 @@ const els = {
   stepTitle: document.getElementById("stepTitle"),
   progressLabel: document.getElementById("progressLabel"),
   progressFill: document.getElementById("progressFill"),
-  timerChip: document.getElementById("timerChip"),
-  themeChip: document.getElementById("themeChip"),
-  stepPills: document.getElementById("stepPills"),
   nextBtn: document.getElementById("nextBtn"),
   demoBtn: document.getElementById("demoBtn"),
   resetBtn: document.getElementById("resetBtn"),
@@ -34,13 +24,6 @@ const els = {
 };
 
 let audioCtx = null;
-let timerId = null;
-
-function syncResultIfNeeded() {
-  if (!state.finished && state.step === STEPS.RESULT) {
-    evaluateResult(state);
-  }
-}
 
 function initScene() {
   const colors = ["#38bdf8", "#22c55e", "#f59e0b", "#e879f9", "#60a5fa"];
@@ -80,102 +63,29 @@ function playClick() {
   osc.stop(ctx.currentTime + 0.1);
 }
 
-function formatTime(ms) {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
-  const seconds = String(totalSeconds % 60).padStart(2, "0");
-  return `${minutes}:${seconds}`;
-}
-
-function updateTimerChip() {
-  if (!state.startedAt) {
-    els.timerChip.textContent = "⏱ 00:00";
-    return;
-  }
-  const elapsed = Date.now() - state.startedAt;
-  els.timerChip.textContent = `⏱ ${formatTime(elapsed)}`;
-}
-
-function persist() {
-  localStorage.setItem(STORAGE_KEY, serializeState(state));
-}
-
 function rerender() {
-  syncResultIfNeeded();
-
-  if (state.started) {
-    els.startOverlay.classList.add("hidden");
-  }
-
   renderTop(state, els);
   renderContent(state, els.content, {
     onIdeaSelect: (idea) => {
       state.selectedIdea = idea;
       playClick();
-      persist();
       rerender();
     },
     onBlockToggle: (block) => {
       toggleBlock(state, block);
-      syncResultIfNeeded();
       playClick();
-      persist();
       rerender();
     },
     onCta: () => {
       alert("Заявка отправлена! Мы свяжемся с вами для записи на занятие.");
     }
   });
-
-  updateTimerChip();
-}
-
-function startSessionIfNeeded() {
-  if (!state.startedAt) state.startedAt = Date.now();
-  if (timerId) return;
-  timerId = setInterval(updateTimerChip, 1000);
-}
-
-function registerHotkeys() {
-  document.addEventListener("keydown", (event) => {
-    if (!state.started || state.finished) return;
-
-    const key = event.key.toLowerCase();
-    if (["1", "2", "3"].includes(key) && state.step === 1) {
-      state.selectedIdea = IDEAS[Number(key) - 1];
-      persist();
-      rerender();
-    }
-
-    if (key === "d") {
-      applyRandomDemo(state);
-      syncResultIfNeeded();
-      persist();
-      rerender();
-    }
-
-    if (key === "n") {
-      if (!canGoNext(state)) return;
-      nextStep(state);
-      persist();
-      rerender();
-    }
-
-    if (key === "r") {
-      resetState(state);
-      localStorage.removeItem(STORAGE_KEY);
-      els.startOverlay.classList.remove("hidden");
-      rerender();
-    }
-  });
 }
 
 els.startBtn.addEventListener("click", () => {
   state.started = true;
-  startSessionIfNeeded();
   els.startOverlay.classList.add("hidden");
   playClick();
-  persist();
   rerender();
 });
 
@@ -186,27 +96,21 @@ els.nextBtn.addEventListener("click", () => {
   }
   nextStep(state);
   playClick();
-  persist();
   rerender();
 });
 
 els.demoBtn.addEventListener("click", () => {
   if (!state.started || state.finished) return;
   applyRandomDemo(state);
-  syncResultIfNeeded();
   playClick();
-  persist();
   rerender();
 });
 
 els.resetBtn.addEventListener("click", () => {
   resetState(state);
-  localStorage.removeItem(STORAGE_KEY);
   els.startOverlay.classList.remove("hidden");
   rerender();
 });
 
 initScene();
-registerHotkeys();
-if (state.started) startSessionIfNeeded();
 rerender();

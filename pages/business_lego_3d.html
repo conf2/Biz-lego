@@ -14,126 +14,250 @@
       min-height: 100vh;
       overflow: hidden;
     }
-    #scene { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    #scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
     .floating-brick {
-      position: absolute; width: 120px; height: 70px; border-radius: 14px; opacity: 0.28;
-      transform-style: preserve-3d; animation: drift 14s ease-in-out infinite;
+      position: absolute;
+      width: 120px;
+      height: 70px;
+      border-radius: 14px;
+      opacity: 0.28;
+      transform-style: preserve-3d;
+      animation: drift 14s ease-in-out infinite;
       box-shadow: 0 18px 30px rgba(15, 23, 42, 0.55);
     }
+
     @keyframes drift {
       0%, 100% { transform: translate3d(0,0,0) rotateX(0deg) rotateY(0deg); }
       50% { transform: translate3d(12px,-18px,0) rotateX(10deg) rotateY(16deg); }
     }
 
     .app {
-      position: relative; z-index: 2; width: min(1050px, calc(100% - 24px)); margin: 12px auto;
-      background: rgba(15, 23, 42, 0.68); border: 1px solid rgba(148, 163, 184, 0.18);
-      border-radius: 18px; backdrop-filter: blur(8px); overflow: hidden;
+      position: relative;
+      z-index: 2;
+      width: min(960px, calc(100% - 32px));
+      margin: 16px auto;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 18px;
+      backdrop-filter: blur(8px);
+      overflow: hidden;
     }
+
     .topbar {
-      padding: 14px 18px; border-bottom: 1px solid rgba(148, 163, 184, 0.16);
-      display: grid; gap: 10px;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
     }
-    .topline { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+
     .step-title { font-weight: 700; font-size: 18px; }
     .progress { color: #cbd5e1; font-size: 14px; }
-    .progress-line { width: 190px; height: 8px; background: rgba(148,163,184,.2); border-radius: 999px; overflow: hidden; margin-top: 6px; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #38bdf8); width: 33.33%; transition: width .25s ease; }
 
-    .step-pills { display: flex; gap: 8px; flex-wrap: wrap; }
-    .step-pill {
-      font-size: 12px; padding: 6px 10px; border-radius: 999px;
-      background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, .35); color: #cbd5e1;
-    }
-    .step-pill.active { border-color: #22c55e; color: #e2fbe8; background: rgba(22,163,74,.2); }
-
-    .meta { display: flex; gap: 8px; flex-wrap: wrap; }
-    .meta-chip {
-      font-size: 12px; padding: 6px 10px; border-radius: 999px;
-      background: rgba(51,65,85,.8); border: 1px solid rgba(148,163,184,.3); color: #cbd5e1;
+    .progress-line {
+      width: 170px;
+      height: 8px;
+      background: rgba(148, 163, 184, 0.2);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 6px;
     }
 
-    .content { padding: 16px; min-height: 440px; display: grid; gap: 12px; align-content: start; }
-    .panel { border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 14px; background: rgba(15, 23, 42, 0.6); }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #38bdf8);
+      width: 33.33%;
+      transition: width .25s ease;
+    }
+
+    .content {
+      padding: 20px;
+      min-height: 430px;
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .panel {
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(15, 23, 42, 0.6);
+    }
 
     .btn {
-      border: 0; border-radius: 10px; background: #2563eb; color: #fff;
-      padding: 10px 14px; font-size: 15px; cursor: pointer;
+      border: 0;
+      border-radius: 10px;
+      background: #2563eb;
+      color: #fff;
+      padding: 10px 14px;
+      font-size: 15px;
+      cursor: pointer;
       transition: transform .15s ease, filter .15s ease;
     }
+
     .btn:hover { filter: brightness(1.06); }
     .btn:active { transform: translateY(1px) scale(.99); }
     .btn.secondary { background: #334155; }
     .btn.success { background: #16a34a; }
+
     .btn.ghost { background: #0f172a; border: 1px solid rgba(148,163,184,.45); }
 
-    .choice-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
-    .choice {
-      border: 1px solid rgba(148,163,184,.4); background: rgba(30,41,59,.8); color: #fff;
-      border-radius: 12px; padding: 14px; text-align: left; cursor: pointer;
-      transition: transform .2s ease, border-color .2s ease, background .2s ease;
-    }
-    .choice.active { border-color: #22c55e; background: rgba(22,163,74,.25); transform: scale(1.03); }
-
-    .brick-zone { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; perspective: 700px; }
-    .brick {
-      background: linear-gradient(180deg, rgba(15,23,42,.9), rgba(2,6,23,.95)); border: 1px solid rgba(148,163,184,.35);
-      border-radius: 12px; padding: 14px; min-height: 95px; cursor: pointer; transform: rotateX(0deg) scale(1);
-      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease;
-    }
-    .brick.active {
-      border-color: #f59e0b; background: linear-gradient(180deg, rgba(245,158,11,.28), rgba(30,41,59,.85));
-      box-shadow: 0 12px 25px rgba(245, 158, 11, 0.25); transform: rotateX(8deg) scale(1.05);
-    }
-
-    .lego-preview { display: flex; gap: 8px; flex-wrap: wrap; }
-    .mini { padding: 8px 10px; border-radius: 9px; font-size: 13px; background: rgba(51,65,85,.8); border: 1px solid rgba(148,163,184,.25); }
-    .mini.active { background: rgba(34,197,94,.25); border-color: rgba(34,197,94,.7); }
-
     .city-preview {
-      margin-top: 12px; display: flex; gap: 12px; align-items: flex-end; min-height: 210px;
-      padding: 12px; border-radius: 12px; background: linear-gradient(180deg, rgba(56,189,248,.08), rgba(15,23,42,.6));
-      border: 1px solid rgba(148,163,184,.22); overflow-x: auto;
+      margin-top: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      min-height: 200px;
+      padding: 12px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(56,189,248,.08), rgba(15,23,42,.6));
+      border: 1px solid rgba(148,163,184,.22);
+      overflow-x: auto;
     }
-    .building { min-width: 74px; display: flex; flex-direction: column-reverse; align-items: center; gap: 4px; animation: pop-in .25s ease; }
+
+    .building {
+      min-width: 74px;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      gap: 4px;
+      animation: pop-in .25s ease;
+    }
+
     .lego-part {
-      width: var(--part-width, 64px); border-radius: 7px; border: 1px solid rgba(2,6,23,.45);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.22); position: relative;
+      width: var(--part-width, 64px);
+      border-radius: 7px;
+      border: 1px solid rgba(2,6,23,.45);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.22);
+      position: relative;
     }
+
     .lego-part::before {
-      content: ''; position: absolute; left: 9px; right: 9px; top: 4px; height: 4px;
-      border-radius: 999px; background: rgba(255,255,255,.28);
+      content: '';
+      position: absolute;
+      left: 9px;
+      right: 9px;
+      top: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.28);
     }
+
     .lego-base { height: 20px; background: linear-gradient(180deg, #334155, #1e293b); }
     .lego-wall { height: 24px; background: linear-gradient(180deg, var(--wall-color, #38bdf8), #0ea5e9); }
     .lego-roof { height: 18px; background: linear-gradient(180deg, #f97316, #c2410c); clip-path: polygon(8% 100%, 50% 5%, 92% 100%); }
-    .lego-accent { height: 10px; background: linear-gradient(180deg, #fde047, #f59e0b); width: 16px; border-radius: 999px; }
     .building-label { font-size: 12px; color: #cbd5e1; margin-top: 4px; text-align: center; }
+
     .parts-legend { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     .pill { font-size: 12px; padding: 5px 8px; border-radius: 999px; background: rgba(51,65,85,.8); border: 1px solid rgba(148,163,184,.3); }
 
-    .checklist { display: grid; gap: 6px; }
-    .check { font-size: 13px; color: #cbd5e1; }
-    .check.ok { color: #86efac; }
+    @keyframes pop-in {
+      from { transform: translateY(8px) scale(.95); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
 
-    @keyframes pop-in { from { transform: translateY(8px) scale(.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+    .choice-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    }
+
+    .choice {
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(30, 41, 59, 0.8);
+      color: #fff;
+      border-radius: 12px;
+      padding: 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: transform .2s ease, border-color .2s ease, background .2s ease;
+    }
+
+    .choice.active {
+      border-color: #22c55e;
+      background: rgba(22, 163, 74, 0.25);
+      transform: scale(1.03);
+    }
+
+    .brick-zone {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      perspective: 700px;
+    }
+
+    .brick {
+      background: linear-gradient(180deg, rgba(15,23,42,.9), rgba(2,6,23,.95));
+      border: 1px solid rgba(148,163,184,.35);
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 95px;
+      cursor: pointer;
+      transform: rotateX(0deg) scale(1);
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+
+    .brick.active {
+      border-color: #f59e0b;
+      background: linear-gradient(180deg, rgba(245,158,11,.28), rgba(30,41,59,.85));
+      box-shadow: 0 12px 25px rgba(245, 158, 11, 0.25);
+      transform: rotateX(8deg) scale(1.05);
+    }
+
+    .lego-preview { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .mini {
+      padding: 8px 10px;
+      border-radius: 9px;
+      font-size: 13px;
+      background: rgba(51,65,85,.8);
+      border: 1px solid rgba(148,163,184,.25);
+    }
+
+    .mini.active {
+      background: rgba(34,197,94,.25);
+      border-color: rgba(34,197,94,.7);
+    }
 
     .footer {
-      padding: 14px 18px; border-top: 1px solid rgba(148,163,184,.16);
-      display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+      padding: 14px 20px;
+      border-top: 1px solid rgba(148, 163, 184, 0.16);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .overlay {
-      position: fixed; inset: 0; z-index: 5; display: grid; place-items: center;
-      background: rgba(2, 6, 23, 0.76); padding: 16px;
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: grid;
+      place-items: center;
+      background: rgba(2, 6, 23, 0.76);
+      padding: 16px;
     }
+
     .overlay-card {
-      width: min(650px, 100%); background: rgba(15, 23, 42, .95); border: 1px solid rgba(148,163,184,.25);
-      border-radius: 16px; padding: 24px; text-align: center;
+      width: min(620px, 100%);
+      background: rgba(15, 23, 42, .95);
+      border: 1px solid rgba(148,163,184,.25);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
     }
+
     .overlay h1 { margin: 0 0 10px; font-size: 32px; }
     .muted { color: #cbd5e1; line-height: 1.4; }
-    .hotkeys { margin-top: 12px; font-size: 12px; color: #94a3b8; }
 
     .hidden { display: none !important; }
   </style>
@@ -146,24 +270,16 @@
       <h1>Собери свой первый бизнес из LEGO за 5 минут</h1>
       <p class="muted">Ребёнок проходит мини-игру и видит, как из идеи собирается рабочая модель бизнеса. Родитель сразу понимает пользу: мышление, логика, деньги.</p>
       <button id="startBtn" class="btn">Начать</button>
-      <div class="hotkeys">Горячие клавиши: 1/2/3 идеи, D — демо, N — далее, R — reset.</div>
     </div>
   </div>
 
   <main class="app">
     <header class="topbar">
-      <div class="topline">
-        <div>
-          <div id="stepTitle" class="step-title">Шаг 1: Выберите идею</div>
-          <div class="progress-line"><div id="progressFill" class="progress-fill"></div></div>
-        </div>
-        <div id="progressLabel" class="progress">1 / 3</div>
+      <div>
+        <div id="stepTitle" class="step-title">Шаг 1: Выберите идею</div>
+        <div class="progress-line"><div id="progressFill" class="progress-fill"></div></div>
       </div>
-      <div id="stepPills" class="step-pills"></div>
-      <div class="meta">
-        <span id="timerChip" class="meta-chip">⏱ 00:00</span>
-        <span id="themeChip" class="meta-chip">🏙 Тема: —</span>
-      </div>
+      <div id="progressLabel" class="progress">1 / 3</div>
     </header>
 
     <section id="content" class="content"></section>

@@ -1,4 +1,4 @@
-import { BLOCKS, IDEAS, STEPS, getDemoPartStats, getMissingKeyBlocks } from "./state.js";
+import { BLOCKS, IDEAS, STEPS, getDemoPartStats } from "./state.js";
 
 export function getStepTitle(step) {
   if (step === STEPS.IDEA) return "Шаг 1: Выберите идею";
@@ -6,25 +6,8 @@ export function getStepTitle(step) {
   return "Шаг 3: Результат";
 }
 
-function renderChecklist(state) {
-  const checks = [
-    { label: "Выбрана идея бизнеса", ok: Boolean(state.selectedIdea) },
-    { label: "Добавлено минимум 3 блока", ok: state.selectedBlocks.size >= 3 },
-    { label: "Есть ключевые блоки (продукт, маркетинг, деньги)", ok: getMissingKeyBlocks(state).length === 0 }
-  ];
-
-  return `
-    <div class="panel">
-      <h3>🎯 Мини-миссия</h3>
-      <div class="checklist">
-        ${checks.map((item) => `<div class="check ${item.ok ? "ok" : ""}">${item.ok ? "✅" : "⬜"} ${item.label}</div>`).join("")}
-      </div>
-    </div>
-  `;
-}
-
 function renderDemoConstruction(demo) {
-  const { baseCount, wallCount, roofCount, accentCount } = getDemoPartStats(demo);
+  const { baseCount, wallCount, roofCount } = getDemoPartStats(demo);
 
   return `
     <div class="panel">
@@ -34,7 +17,6 @@ function renderDemoConstruction(demo) {
       <div class="city-preview">
         ${demo.buildings.map((building) => `
           <div class="building">
-            ${building.accent ? `<div class="lego-accent"></div>` : ""}
             ${building.roof ? `<div class="lego-part lego-roof" style="--part-width:${building.width + 6}px"></div>` : ""}
             ${Array.from({ length: building.floors }, () => `<div class="lego-part lego-wall" style="--part-width:${building.width}px; --wall-color:${building.wallColor}"></div>`).join("")}
             ${building.base ? `<div class="lego-part lego-base" style="--part-width:${building.width + 10}px"></div>` : ""}
@@ -47,7 +29,6 @@ function renderDemoConstruction(demo) {
         <span class="pill">Основания: ${baseCount}</span>
         <span class="pill">Стены: ${wallCount}</span>
         <span class="pill">Крыши: ${roofCount}</span>
-        <span class="pill">Акценты: ${accentCount}</span>
       </div>
     </div>
   `;
@@ -61,7 +42,6 @@ export function renderContent(state, contentEl, handlers) {
         <p class="muted">На занятии он сделает это в реальности.</p>
         <button id="ctaBtn" class="btn success">Записаться на занятие</button>
       </div>
-      ${state.result ? `<div class="panel"><h3>${state.result.title}</h3><p class="muted">${state.result.description}</p><p class="muted">${state.result.recommendation || ""}</p></div>` : ""}
       ${renderDemoConstruction(state.demo)}
     `;
     contentEl.querySelector("#ctaBtn").addEventListener("click", handlers.onCta);
@@ -80,7 +60,6 @@ export function renderContent(state, contentEl, handlers) {
           `).join("")}
         </div>
       </div>
-      ${renderChecklist(state)}
       ${renderDemoConstruction(state.demo)}
     `;
 
@@ -91,7 +70,7 @@ export function renderContent(state, contentEl, handlers) {
   }
 
   const resultHtml = state.result
-    ? `<div class="panel"><h3>${state.result.title}</h3><p class="muted">${state.result.description}</p><p class="muted">${state.result.recommendation || ""}</p></div>`
+    ? `<div class="panel"><h3>${state.result.title}</h3><p class="muted">${state.result.description}</p></div>`
     : "";
 
   contentEl.innerHTML = `
@@ -116,7 +95,6 @@ export function renderContent(state, contentEl, handlers) {
       </div>
     </div>
 
-    ${renderChecklist(state)}
     ${renderDemoConstruction(state.demo)}
     ${state.step === STEPS.RESULT ? resultHtml : ""}
   `;
@@ -130,13 +108,6 @@ export function renderTop(state, elements) {
   elements.stepTitle.textContent = getStepTitle(state.step);
   elements.progressLabel.textContent = `${Math.min(state.step, 3)} / 3`;
   elements.progressFill.style.width = `${(Math.min(state.step, 3) / 3) * 100}%`;
-  elements.themeChip.textContent = `🏙 Тема: ${state.demo.theme}`;
-
-  elements.stepPills.innerHTML = [
-    "1. Идея",
-    "2. Сборка",
-    "3. Результат"
-  ].map((label, index) => `<span class="step-pill ${state.step === index + 1 ? "active" : ""}">${label}</span>`).join("");
 
   const canUseDemo = state.started && !state.finished;
   elements.demoBtn.disabled = !canUseDemo;
