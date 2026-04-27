@@ -54,7 +54,7 @@ python3 -m http.server 8000
 2. В `Source` выберите `Deploy from a branch`.
 3. Branch: `main` (или нужную), Folder: `/root`, Save.
 4. После публикации откройте:
-   - `https://<username>.github.io/<repo>/pages/`
+   - `https://<username>.github.io/<repo>/` (автоматически откроется сайт)
    - `https://<username>.github.io/<repo>/pages/business_lego_3d.html`
 
 ## Почему 3D может не запускаться в некоторых preview-сервисах
