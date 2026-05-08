@@ -78,13 +78,16 @@
         .ops-step-head { display:flex; justify-content:space-between; font-size:11px; color:#cbd5e1; margin-bottom:6px; }
         .ops-bar { height:6px; background:rgba(51,65,85,0.5); border-radius:8px; overflow:hidden; }
         .ops-fill { height:100%; border-radius:8px; transition:width .4s ease; }
+        .toast { position:absolute; left:50%; top:96px; transform:translateX(-50%); z-index:20; padding:10px 16px; border-radius:12px; background:rgba(15,23,42,0.92); border:1px solid rgba(148,163,184,0.22); color:#e2e8f0; font-size:12px; font-weight:700; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; }
+        .toast.show { opacity:1; transform:translateX(-50%) translateY(6px); }
     </style>
 </head>
 <body>
     <div class="loading" id="loading">Загрузка 3D...</div>
+    <div class="toast" id="toast"></div>
     <div class="sidebar" id="sidebar">
         <div class="header">БИЗНЕС-ЛЕГО</div>
-        <div class="sub">140+ деталей • Физика • Под ключ<br>Кликайте элемент → появляется в 3D<br>Перетаскивайте — конструкция двигается вместе</div>
+        <div class="sub">Мини-детали • Готовые здания • Сохранения<br>Кликайте элемент → появляется в 3D<br>Перетаскивайте — конструкция двигается вместе</div>
         <div id="cats"></div>
     </div>
     <div class="controls">
@@ -96,8 +99,14 @@
             <option value="agency">Набор: Агентство</option>
             <option value="store">Набор: Магазины</option>
             <option value="kids">Набор: Детский центр</option>
+            <option value="office_tower">Готовое: офисный центр</option>
+            <option value="coffee_shop">Готовое: кофейня</option>
+            <option value="factory_complex">Готовое: заводской комплекс</option>
+            <option value="retail_box">Готовое: коммерческий павильон</option>
         </select>
         <button class="btn" onclick="loadPreset()">🏗 Собрать набор</button>
+        <button class="btn" onclick="saveScene()">💾 Сохранить</button>
+        <button class="btn" onclick="loadSavedScene()">📂 Загрузить</button>
         <button class="btn" id="sound-toggle" onclick="toggleSound()">🔊 Звук: Вкл</button>
     </div>
     <div class="stats">
@@ -229,11 +238,14 @@
         // ==========================================
         // КОНФИГУРАЦИЯ LEGO
         // ==========================================
-        const UNIT = 24;
-        const STUD_R = 5.0;
-        const STUD_H = 3.6;
-        const TUBE_R = 3.6;
-        const TUBE_H = 3.2;
+        const UNIT = 16;
+        const STUD_R = 3.2;
+        const STUD_H = 2.4;
+        const TUBE_R = 2.3;
+        const TUBE_H = 2.1;
+        const BRICK_H = 12.8;
+        const PLATE_H = 4.2;
+        const TALL_H = 25.6;
 
         // ==========================================
         // КАТЕГОРИИ
@@ -330,12 +342,35 @@
             }
         };
 
+
+        CATS.architecture = {
+            name: 'Мини-архитектура', color: 0xa855f7,
+            items: [
+                {name:'Окно 1×1', w:1, d:1, h:BRICK_H, type:'window', role:'wall'},
+                {name:'Дверь входная', w:1, d:1, h:TALL_H, type:'door', role:'wall'},
+                {name:'Витрина магазина', w:2, d:1, h:BRICK_H, type:'glass', role:'wall'},
+                {name:'Угловая изогнутая стена', w:1, d:1, h:BRICK_H, type:'curve', role:'wall'},
+                {name:'Арка прохода', w:2, d:1, h:TALL_H, type:'arch', role:'wall'},
+                {name:'Скат крыши 1×2', w:1, d:2, h:BRICK_H, type:'roof_gable', role:'roof'},
+                {name:'Угол крыши', w:1, d:1, h:BRICK_H, type:'roof_corner', role:'roof'},
+                {name:'Вывеска фасада', w:2, d:1, h:PLATE_H, type:'sign', role:'functional'},
+                {name:'Труба / вентиляция', w:1, d:1, h:TALL_H, type:'chimney', role:'tower'},
+                {name:'Мини-плитка пола', w:1, d:1, h:PLATE_H, type:'plate', role:'floor'},
+                {name:'Стеклянный офисный модуль', w:1, d:2, h:BRICK_H, type:'glass', role:'wall'},
+                {name:'Заводские ворота', w:2, d:1, h:TALL_H, type:'door', role:'sales_hall'}
+            ]
+        };
+
         const PRESETS = {
             content_plant: { label: 'Контент-завод', flow: 'content', footprint:[7,5], floors: 2, wallCat:'marketing', roofCat:'analytics', accentCat:'sales' },
             plant: { label: 'Завод', flow: 'factory', footprint:[8,6], floors: 2, wallCat:'foundation', roofCat:'analytics', accentCat:'sales' },
             agency: { label: 'Агентство', flow: 'office', footprint:[6,4], floors: 3, wallCat:'marketing', roofCat:'foundation', accentCat:'sales' },
             store: { label: 'Магазины', flow: 'retail', footprint:[7,4], floors: 2, wallCat:'sales', roofCat:'marketing', accentCat:'analytics' },
-            kids: { label: 'Детский центр', flow: 'education', footprint:[6,5], floors: 2, wallCat:'foundation', roofCat:'marketing', accentCat:'sales' }
+            kids: { label: 'Детский центр', flow: 'education', footprint:[6,5], floors: 2, wallCat:'foundation', roofCat:'marketing', accentCat:'sales' },
+            office_tower: { label: 'Офисный центр', flow: 'office', footprint:[8,5], floors: 4, wallCat:'architecture', roofCat:'analytics', accentCat:'marketing', ready:'office' },
+            coffee_shop: { label: 'Кофейня', flow: 'retail', footprint:[6,4], floors: 1, wallCat:'architecture', roofCat:'marketing', accentCat:'sales', ready:'cafe' },
+            factory_complex: { label: 'Заводской комплекс', flow: 'factory', footprint:[10,6], floors: 2, wallCat:'foundation', roofCat:'architecture', accentCat:'analytics', ready:'factory' },
+            retail_box: { label: 'Коммерческий павильон', flow: 'retail', footprint:[8,4], floors: 1, wallCat:'architecture', roofCat:'marketing', accentCat:'sales', ready:'retail' }
         };
 
         // ==========================================
@@ -629,6 +664,37 @@
                 path.position.y = h/2 + 0.3;
                 group.add(path);
             }
+            if (item.type === "window" || item.type === "glass") {
+                const paneCount = item.type === "glass" ? Math.max(1, item.w) : 1;
+                for (let i = 0; i < paneCount; i++) {
+                    const pane = new THREE.Mesh(
+                        new THREE.PlaneGeometry((w / paneCount) * 0.7, h * 0.62),
+                        new THREE.MeshPhysicalMaterial({ color: 0xbfe9ff, transparent: true, opacity: 0.55, roughness: 0.02, metalness: 0.1, clearcoat: 1 })
+                    );
+                    pane.position.set((i - (paneCount - 1) / 2) * (w / paneCount), 0, d/2 + 1.2);
+                    group.add(pane);
+                }
+            }
+            if (item.type === "door") {
+                const door = new THREE.Mesh(
+                    new THREE.PlaneGeometry(w * 0.68, h * 0.78),
+                    new THREE.MeshBasicMaterial({ color: 0x1e293b, transparent: true, opacity: 0.82, side: THREE.DoubleSide })
+                );
+                door.position.set(0, -h * 0.05, d/2 + 1.25);
+                group.add(door);
+                const handle = new THREE.Mesh(new THREE.SphereGeometry(1.1, 8, 8), new THREE.MeshStandardMaterial({ color: 0xfbbf24 }));
+                handle.position.set(w * 0.18, -h * 0.05, d/2 + 1.8);
+                group.add(handle);
+            }
+            if (item.type === "sign") {
+                const sign = new THREE.Mesh(
+                    new THREE.BoxGeometry(w * 0.92, Math.max(3, h * 1.8), 1.4),
+                    new THREE.MeshStandardMaterial({ color: 0xf8fafc, emissive: 0xffffff, emissiveIntensity: 0.12 })
+                );
+                sign.position.set(0, h/2 + Math.max(2, h * 0.9), d/2 + 1.5);
+                sign.castShadow = true;
+                group.add(sign);
+            }
             if (detectRole(item) === "sales_hall" || item.name.toLowerCase().includes("обзвон") || item.name.toLowerCase().includes("тел")) {
                 const glass = new THREE.Mesh(
                     new THREE.BoxGeometry(w * 0.9, h * 0.7, 2),
@@ -652,7 +718,69 @@
             decorDot.position.set(-w/2 + 4, h/2 + 2, -d/2 + 4);
             group.add(decorDot);
         }
-        function createBrick(catKey, itemIdx, pos) {
+
+        function createTriangularPrismGeometry(w, h, d) {
+            const hw = w / 2, hd = d / 2;
+            const vertices = new Float32Array([
+                -hw, -h/2, -hd,  hw, -h/2, -hd,  0, h/2, -hd,
+                -hw, -h/2,  hd,  hw, -h/2,  hd,  0, h/2,  hd
+            ]);
+            const indices = [0,1,2, 3,5,4, 0,3,4, 0,4,1, 1,4,5, 1,5,2, 2,5,3, 2,3,0];
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geo.setIndex(indices);
+            geo.computeVertexNormals();
+            return geo;
+        }
+
+        function createBrickBody(group, item, mat, w, h, d) {
+            const type = item.type;
+            if (type === 'round') {
+                const body = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w, d) / 2 - 0.6, Math.min(w, d) / 2 - 0.6, h, 32), mat);
+                body.castShadow = true; body.receiveShadow = true; group.add(body); return;
+            }
+            if (type === 'curve' || type === 'roof_corner') {
+                const curveMat = mat.clone();
+                const body = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w, d) - 0.8, Math.min(w, d) - 0.8, h, 32, 1, false, 0, Math.PI / 2), curveMat);
+                body.position.set(-w/2 + 0.6, 0, -d/2 + 0.6);
+                body.rotation.y = type === 'roof_corner' ? Math.PI / 2 : 0;
+                body.castShadow = true; body.receiveShadow = true; group.add(body);
+                const fill = new THREE.Mesh(new THREE.BoxGeometry(w * 0.55, h, d * 0.55), mat);
+                fill.position.set(w * 0.12, 0, d * 0.12);
+                fill.castShadow = true; fill.receiveShadow = true; group.add(fill); return;
+            }
+            if (type === 'arch') {
+                const pillarW = w * 0.18;
+                const pillarGeo = new THREE.BoxGeometry(pillarW, h * 0.72, d - 1.0);
+                [-1, 1].forEach(side => {
+                    const pillar = new THREE.Mesh(pillarGeo, mat);
+                    pillar.position.set(side * (w/2 - pillarW/2), -h * 0.14, 0);
+                    pillar.castShadow = true; pillar.receiveShadow = true; group.add(pillar);
+                });
+                const beam = new THREE.Mesh(new THREE.BoxGeometry(w - 1.0, h * 0.25, d - 1.0), mat);
+                beam.position.y = h * 0.36;
+                beam.castShadow = true; beam.receiveShadow = true; group.add(beam);
+                const arc = new THREE.Mesh(new THREE.TorusGeometry(w * 0.26, Math.max(1.2, h * 0.06), 8, 24, Math.PI), mat);
+                arc.rotation.z = Math.PI;
+                arc.rotation.y = Math.PI / 2;
+                arc.position.set(0, h * 0.05, d/2 - 1.2);
+                arc.castShadow = true; group.add(arc); return;
+            }
+            if (type === 'roof_gable' || type === 'slope') {
+                const body = new THREE.Mesh(createTriangularPrismGeometry(w - 1.0, h, d - 1.0), mat);
+                body.castShadow = true; body.receiveShadow = true; group.add(body); return;
+            }
+            if (type === 'chimney') {
+                const body = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w, d) * 0.28, Math.min(w, d) * 0.34, h, 16), mat);
+                body.castShadow = true; body.receiveShadow = true; group.add(body);
+                const cap = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(w, d) * 0.42, Math.min(w, d) * 0.42, Math.max(1.5, h * 0.12), 16), mat);
+                cap.position.y = h / 2 + Math.max(1.5, h * 0.12) / 2;
+                cap.castShadow = true; group.add(cap); return;
+            }
+            const body = new THREE.Mesh(new THREE.BoxGeometry(w - 1.0, h, d - 1.0), mat);
+            body.castShadow = true; body.receiveShadow = true; group.add(body);
+        }
+        function createBrick(catKey, itemIdx, pos, options = {}) {
             const cat = CATS[catKey];
             const item = cat.items[itemIdx];
             const w = item.w * UNIT, d = item.d * UNIT, h = item.h;
@@ -661,10 +789,7 @@
                 color: cat.color, roughness: 0.15, metalness: 0.05,
                 clearcoat: 1.0, clearcoatRoughness: 0.05
             });
-            const bodyGeo = new THREE.BoxGeometry(w - 1.0, h, d - 1.0);
-            const body = new THREE.Mesh(bodyGeo, mat);
-            body.castShadow = true; body.receiveShadow = true;
-            group.add(body);
+            createBrickBody(group, item, mat, w, h, d);
             if (item.type !== "tile") {
                 const studMat = mat.clone();
                 for (let i = 0; i < item.w; i++) {
@@ -699,28 +824,30 @@
                     group.add(hole);
                 }
             }
-            const labelTex = createLabelTexture(item.name, cat.color);
-            const labelMat = new THREE.MeshBasicMaterial({
-                map: labelTex, transparent: true, opacity: 0.98, side: THREE.DoubleSide
-            });
-            const lw = w * 0.92;
-            const lh = Math.min(h * 0.85, 80);
-            const labelF = new THREE.Mesh(new THREE.PlaneGeometry(lw, lh), labelMat);
-            labelF.position.set(0, 0, d/2 + 0.8);
-            group.add(labelF);
-            const labelB = labelF.clone();
-            labelB.rotation.y = Math.PI;
-            labelB.position.set(0, 0, -d/2 - 0.8);
-            group.add(labelB);
-            if (item.w >= 3) {
-                const labelL = new THREE.Mesh(new THREE.PlaneGeometry(d * 0.8, lh), labelMat);
-                labelL.rotation.y = -Math.PI/2;
-                labelL.position.set(-w/2 - 0.8, 0, 0);
-                group.add(labelL);
-                const labelR = labelL.clone();
-                labelR.rotation.y = Math.PI/2;
-                labelR.position.set(w/2 + 0.8, 0, 0);
-                group.add(labelR);
+            if (item.w * item.d > 1 && h >= PLATE_H) {
+                const labelTex = createLabelTexture(item.name, cat.color);
+                const labelMat = new THREE.MeshBasicMaterial({
+                    map: labelTex, transparent: true, opacity: 0.98, side: THREE.DoubleSide
+                });
+                const lw = w * 0.92;
+                const lh = Math.min(h * 0.85, 80);
+                const labelF = new THREE.Mesh(new THREE.PlaneGeometry(lw, lh), labelMat);
+                labelF.position.set(0, 0, d/2 + 0.8);
+                group.add(labelF);
+                const labelB = labelF.clone();
+                labelB.rotation.y = Math.PI;
+                labelB.position.set(0, 0, -d/2 - 0.8);
+                group.add(labelB);
+                if (item.w >= 3) {
+                    const labelL = new THREE.Mesh(new THREE.PlaneGeometry(d * 0.8, lh), labelMat);
+                    labelL.rotation.y = -Math.PI/2;
+                    labelL.position.set(-w/2 - 0.8, 0, 0);
+                    group.add(labelL);
+                    const labelR = labelL.clone();
+                    labelR.rotation.y = Math.PI/2;
+                    labelR.position.set(w/2 + 0.8, 0, 0);
+                    group.add(labelR);
+                }
             }
             addDecor(group, item, cat.color, w, h, d);
             group.userData = {
@@ -734,7 +861,13 @@
                 gridX: 0, gridZ: 0, gridY: 0,
                 isFloating: false
             };
-            if (pos) {
+            if (options.saved) {
+                group.position.set(options.saved.x, options.saved.y, options.saved.z);
+                group.rotation.y = options.saved.rotY || 0;
+                group.userData.gridX = options.saved.gridX;
+                group.userData.gridZ = options.saved.gridZ;
+                group.userData.gridY = options.saved.gridY;
+            } else if (pos) {
                 group.position.copy(pos);
             } else {
                 let placed = false, attempts = 0;
@@ -755,16 +888,21 @@
             scene.add(group);
             bricks.push(group);
             updateStats(); updateViz();
-            const start = performance.now();
-            function anim(now) {
-                const t = Math.min((now-start)/600, 1);
-                const s = 1 - Math.pow(1-t, 3);
-                group.scale.set(s,s,s);
-                if (t < 1) requestAnimationFrame(anim);
-                else snapToGrid(group, false);
+            if (options.instant) {
+                group.scale.set(1, 1, 1);
+                updateStats(); updateViz();
+            } else {
+                const start = performance.now();
+                function anim(now) {
+                    const t = Math.min((now-start)/600, 1);
+                    const s = 1 - Math.pow(1-t, 3);
+                    group.scale.set(s,s,s);
+                    if (t < 1) requestAnimationFrame(anim);
+                    else snapToGrid(group, false);
+                }
+                requestAnimationFrame(anim);
+                playPlaceSound();
             }
-            requestAnimationFrame(anim);
-            playPlaceSound();
             return group;
         }
         function isGridFree(gx, gz, w, d, gy) {
@@ -1046,18 +1184,20 @@
             const marketing = byCat.marketing?.length || 0;
             const sales = byCat.sales?.length || 0;
             const analytics = byCat.analytics?.length || 0;
+            const architecture = byCat.architecture?.length || 0;
             let statusClass = "status-err";
             let statusText = "Критические пробелы";
-            if (foundation >= 2 && marketing >= 2 && sales >= 2 && analytics >= 1) {
-                statusClass = "status-ok"; statusText = "✓ Система готова к запуску";
+            if (architecture >= 12 || (foundation >= 2 && marketing >= 2 && sales >= 2 && analytics >= 1)) {
+                statusClass = "status-ok"; statusText = architecture >= 12 ? "✓ Готовое помещение собрано" : "✓ Система готова к запуску";
             } else if (foundation >= 1 && (marketing >= 1 || sales >= 1)) {
                 statusClass = "status-warn"; statusText = "⚠ Работает, есть пробелы";
             }
             let statusHtml = '<div class="status-badge ' + statusClass + '">' + statusText + '</div><div style="margin-top:12px;font-size:11px;color:#94a3b8;line-height:1.6;">';
-            if (foundation < 2) statusHtml += "• Добавьте фундамент (почта, CRM)<br>";
-            if (marketing < 2) statusHtml += "• Добавьте маркетинг (реклама, трафик)<br>";
-            if (sales < 2) statusHtml += "• Добавьте продажи (воронка, отдел)<br>";
-            if (analytics < 1) statusHtml += "• Добавьте аналитику (KPI, аудит)";
+            if (architecture >= 12) statusHtml += "• Фасад, окна, вход и крыша уже выглядят как полноценное здание<br>";
+            if (foundation < 2 && architecture < 12) statusHtml += "• Добавьте фундамент (почта, CRM)<br>";
+            if (marketing < 2 && architecture < 12) statusHtml += "• Добавьте маркетинг (реклама, трафик)<br>";
+            if (sales < 2 && architecture < 12) statusHtml += "• Добавьте продажи (воронка, отдел)<br>";
+            if (analytics < 1 && architecture < 12) statusHtml += "• Добавьте аналитику (KPI, аудит)";
             statusHtml += "</div>";
             statusEl.innerHTML = statusHtml;
 
@@ -1118,14 +1258,72 @@
         // ==========================================
         // UI ФУНКЦИИ
         // ==========================================
-        window.clearScene = function() {
-            playClearSound();
+        window.clearScene = function(withSound = true) {
+            if (withSound) playClearSound();
             bricks.forEach(b => scene.remove(b));
             bricks = [];
             selectedBrick = null;
             updateStats();
             updateViz();
         };
+        const SAVE_KEY = 'businessLegoSceneV2';
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            toast.textContent = message;
+            toast.classList.add('show');
+            clearTimeout(showToast.timer);
+            showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
+        }
+        function serializeScene() {
+            return {
+                version: 2,
+                flow: currentBusinessFlow,
+                savedAt: new Date().toISOString(),
+                bricks: bricks.map(b => ({
+                    catKey: b.userData.catKey,
+                    itemIdx: b.userData.itemIdx,
+                    x: b.position.x,
+                    y: b.position.y,
+                    z: b.position.z,
+                    rotY: b.rotation.y,
+                    gridX: b.userData.gridX,
+                    gridZ: b.userData.gridZ,
+                    gridY: b.userData.gridY
+                }))
+            };
+        }
+        function restoreScene(data) {
+            if (!data || !Array.isArray(data.bricks)) {
+                showToast('Не найдено сохранение');
+                return;
+            }
+            window.clearScene(false);
+            currentBusinessFlow = data.flow || 'office';
+            data.bricks.forEach(saved => {
+                if (!CATS[saved.catKey] || !CATS[saved.catKey].items[saved.itemIdx]) return;
+                createBrick(saved.catKey, saved.itemIdx, null, { instant: true, saved });
+            });
+            updateStats(); updateViz();
+            showToast('Сцена загружена: ' + data.bricks.length + ' деталей');
+        }
+        window.saveScene = function() {
+            const data = serializeScene();
+            localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+            showToast('Сохранено: ' + data.bricks.length + ' деталей');
+        };
+        window.loadSavedScene = function() {
+            const raw = localStorage.getItem(SAVE_KEY);
+            if (!raw) { showToast('Сначала сохраните конструкцию'); return; }
+            try {
+                restoreScene(JSON.parse(raw));
+            } catch (err) {
+                showToast('Сохранение повреждено');
+            }
+        };
+        window.addEventListener('beforeunload', () => {
+            if (bricks.length > 0) localStorage.setItem(SAVE_KEY + ':autosave', JSON.stringify(serializeScene()));
+        });
 
         function getItemByRole(catKey, role) {
             const items = CATS[catKey].items;
@@ -1133,10 +1331,77 @@
             if (idx < 0) idx = Math.floor(Math.random() * items.length);
             return idx;
         }
+        function getItemByType(catKey, type) {
+            const items = CATS[catKey].items;
+            let idx = items.findIndex(it => it.type === type);
+            if (idx < 0) idx = getItemByRole(catKey, type);
+            return idx;
+        }
         function queueBrick(queue, cat, itemIdx, gx, gz, level = 0) {
             queue.push([cat, itemIdx, gx, gz, level]);
         }
+        function createReadyConstructionPlan(preset, randomize = false) {
+            const plan = [];
+            const width = preset.footprint[0] + (randomize ? Math.floor(Math.random() * 2) : 0);
+            const depth = preset.footprint[1] + (randomize ? Math.floor(Math.random() * 2) : 0);
+            const floors = preset.floors + (randomize && preset.ready === 'office' ? 1 : 0);
+            const x0 = -Math.floor(width / 2);
+            const z0 = -Math.floor(depth / 2);
+            const floorIdx = getItemByRole('architecture', 'floor');
+            const windowIdx = getItemByType('architecture', 'window');
+            const glassIdx = getItemByType('architecture', 'glass');
+            const doorIdx = getItemByType('architecture', 'door');
+            const curveIdx = getItemByType('architecture', 'curve');
+            const archIdx = getItemByType('architecture', 'arch');
+            const roofIdx = getItemByType('architecture', preset.ready === 'office' ? 'roof_corner' : 'roof_gable');
+            const signIdx = getItemByType('architecture', 'sign');
+            const chimneyIdx = getItemByType('architecture', 'chimney');
+
+            for (let x = x0; x < x0 + width; x++) {
+                for (let z = z0; z < z0 + depth; z++) {
+                    if ((x - x0 + z - z0) % 2 === 0) queueBrick(plan, 'architecture', floorIdx, x, z, 0);
+                }
+            }
+            for (let floor = 1; floor <= floors; floor++) {
+                for (let x = x0; x < x0 + width; x++) {
+                    const facadeType = floor === 1 && preset.ready !== 'factory' ? glassIdx : windowIdx;
+                    queueBrick(plan, 'architecture', facadeType, x, z0, floor);
+                    queueBrick(plan, 'architecture', windowIdx, x, z0 + depth - 1, floor);
+                }
+                for (let z = z0 + 1; z < z0 + depth - 1; z++) {
+                    queueBrick(plan, 'architecture', z === z0 + 1 || z === z0 + depth - 2 ? curveIdx : windowIdx, x0, z, floor);
+                    queueBrick(plan, 'architecture', z === z0 + 1 || z === z0 + depth - 2 ? curveIdx : windowIdx, x0 + width - 1, z, floor);
+                }
+                if (floor === 1) {
+                    queueBrick(plan, 'architecture', preset.ready === 'cafe' ? archIdx : doorIdx, x0 + Math.floor(width / 2), z0 - 1, floor);
+                    queueBrick(plan, 'architecture', signIdx, x0 + Math.floor(width / 2), z0 - 2, floor + 1);
+                }
+            }
+            for (let x = x0; x < x0 + width; x++) {
+                for (let z = z0; z < z0 + depth; z++) {
+                    if (preset.ready === 'factory' || x === x0 || x === x0 + width - 1 || z === z0 || z === z0 + depth - 1 || (x + z) % 2 === 0) {
+                        queueBrick(plan, 'architecture', roofIdx, x, z, floors + 1);
+                    }
+                }
+            }
+            if (preset.ready === 'factory') {
+                queueBrick(plan, 'architecture', chimneyIdx, x0 + 1, z0 + 1, floors + 2);
+                queueBrick(plan, 'architecture', chimneyIdx, x0 + 3, z0 + 1, floors + 2);
+                queueBrick(plan, 'architecture', getItemByType('architecture', 'door'), x0 + Math.floor(width / 2), z0 - 1, 1);
+                queueBrick(plan, 'sales', getItemByRole('sales', 'sales_hall'), x0 + width + 1, z0 + Math.floor(depth / 2), 1);
+            }
+            if (preset.ready === 'cafe') {
+                queueBrick(plan, 'marketing', getItemByRole('marketing', 'roof'), x0 + width - 2, z0 - 2, 1);
+                queueBrick(plan, 'sales', getItemByRole('sales', 'sales_hall'), x0 + 1, z0 + depth, 1);
+            }
+            if (preset.ready === 'office') {
+                queueBrick(plan, 'analytics', getItemByRole('analytics', 'tower'), x0 + width, z0 + depth - 1, 1);
+                queueBrick(plan, 'foundation', getItemByRole('foundation', 'floor'), x0 + width, z0 + depth - 2, 0);
+            }
+            return plan;
+        }
         function createBuildingPlan(preset, randomize = false) {
+            if (preset.ready) return createReadyConstructionPlan(preset, randomize);
             const plan = [];
             const width = preset.footprint[0] + (randomize ? Math.floor(Math.random() * 2) : 0);
             const depth = preset.footprint[1] + (randomize ? Math.floor(Math.random() * 2) : 0);
@@ -1168,7 +1433,7 @@
             if (salesHallIdx >= 0) queueBrick(plan, 'sales', salesHallIdx, x0 + Math.floor(width/2) - 1, z0 + depth, 1);
             return plan;
         }
-        function spawnPlan(plan) {
+        function spawnPlan(plan, delay = 120) {
             plan.forEach((d, idx) => {
                 setTimeout(() => {
                     const b = createBrick(d[0], d[1]);
@@ -1178,7 +1443,7 @@
                     b.position.z = d[3] * UNIT;
                     b.position.y += d[4] * 24;
                     if (d[4] > 0) snapToGrid(b, false);
-                }, idx * 120);
+                }, idx * delay);
             });
         }
         window.loadPreset = function() {
@@ -1186,14 +1451,14 @@
             const preset = PRESETS[key] || PRESETS.content_plant;
             currentBusinessFlow = preset.flow;
             window.clearScene();
-            spawnPlan(createBuildingPlan(preset, false));
+            spawnPlan(createBuildingPlan(preset, false), preset.ready ? 45 : 120);
         };
         window.loadDemo = function() {
             window.clearScene();
             const keys = Object.keys(PRESETS);
             const preset = PRESETS[keys[Math.floor(Math.random() * keys.length)]];
             currentBusinessFlow = preset.flow;
-            spawnPlan(createBuildingPlan(preset, true));
+            spawnPlan(createBuildingPlan(preset, true), preset.ready ? 45 : 120);
         };
 
         // ==========================================
